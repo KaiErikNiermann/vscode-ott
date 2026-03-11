@@ -12,6 +12,7 @@
             "args": [
                 "--extensionDevelopmentPath=${workspaceFolder}/packages/extension"
             ],
+            "preLaunchTask": "Build ott",
             "sourceMaps": true,
             "outFiles": [
                 "${workspaceFolder}/packages/language/out/**/*.js",

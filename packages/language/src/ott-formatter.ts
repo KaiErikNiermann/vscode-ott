@@ -60,7 +60,11 @@ export class OttFormatter extends AbstractFormatter {
         if (!alwaysIndent && homs.length === 1) {
             formatter.nodes(...homs).prepend(Formatting.oneSpace());
         } else {
-            formatter.nodes(...homs).prepend(Formatting.indent());
+            // Newline + double indent (productions use tabs:1, homs go one level deeper)
+            formatter.nodes(...homs).prepend({
+                options: {},
+                moves: [{ tabs: 3, lines: 1 }],
+            });
         }
     }
 
