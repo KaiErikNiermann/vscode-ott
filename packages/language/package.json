@@ -36,7 +36,8 @@
     },
     "dependencies": {
         "langium": "~4.0.0",
-        "ts-pattern": "^5.9.0"
+        "ts-pattern": "^5.9.0",
+        "vscode-languageserver": "^9.0.1"
     },
     "devDependencies": {
         "langium-cli": "~4.0.0",
