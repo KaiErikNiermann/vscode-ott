@@ -7,6 +7,7 @@ import {
 import { OttGeneratedModule, OttGeneratedSharedModule } from './generated/module.js';
 import { OttValidator, registerValidationChecks } from './ott-validator.js';
 import { OttDocumentSymbolProvider } from './ott-document-symbol-provider.js';
+import { OttFormatter } from './ott-formatter.js';
 import { OttHoverProvider } from './ott-hover-provider.js';
 
 /**
@@ -35,6 +36,7 @@ export const OttModule: Module<OttServices, PartialLangiumServices & OttAddedSer
     },
     lsp: {
         DocumentSymbolProvider: () => new OttDocumentSymbolProvider(),
+        Formatter: () => new OttFormatter(),
         HoverProvider: () => new OttHoverProvider(),
     },
 };
