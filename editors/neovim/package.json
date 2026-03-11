@@ -1,0 +1,11 @@
+{
+  "name": "ott-nvim",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Neovim plugin for Ott language support",
+  "license": "MIT",
+  "scripts": {
+    "build": "echo 'No build step'",
+    "clean": "echo 'No clean step'"
+  }
+}

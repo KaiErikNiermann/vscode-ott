@@ -22,9 +22,13 @@
         "node": "20.19.2",
         "npm": "10.8.2"
     },
+    "bin": {
+        "ott-language-server": "./bin/ott-language-server"
+    },
     "workspaces": [
         "packages/language",
         "packages/cli",
-        "packages/extension"
+        "packages/extension",
+        "editors/neovim"
     ]
 }
