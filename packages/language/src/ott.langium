@@ -118,10 +118,13 @@ HomName:
 HomElement:
     HomInnerBlock | HomDots | HomString;
 
-// Inside hom bodies, almost any token can appear.
+// Inside hom bodies, almost any token can appear — including all grammar keywords,
+// since target-language code (Coq, HOL, Isabelle, etc.) freely uses words like "by".
 HomString:
     value=(ID | ELEMENT_STRING | INT | ',' | '|' | '.' | '/' | '<' | '>' | '{' | '}' | '::' | '::=' | '</' | '/>' | '//'
-        | '..' | '...' | '....' | '(+' | '+)' | '<::');
+        | '(+' | '+)' | '<::'
+        | 'by' | 'grammar' | 'metavar' | 'indexvar' | 'defns' | 'defn' | 'embed' | 'subrules'
+        | 'substitutions' | 'freevars' | 'parsing' | 'single' | 'multiple' | 'left' | 'right' | 'nonassoc' | 'prec');
 
 HomDots:
     value=DotKind;
@@ -133,7 +136,9 @@ HomInnerElement:
     HomInnerComprehension | HomInnerDots | HomInnerString;
 
 HomInnerString:
-    value=(ID | ELEMENT_STRING | INT | ',' | '|' | '.' | '/');
+    value=(ID | ELEMENT_STRING | INT | ',' | '|' | '.' | '/' | '<' | '>' | '{' | '}'
+        | 'by' | 'grammar' | 'metavar' | 'indexvar' | 'defns' | 'defn' | 'embed' | 'subrules'
+        | 'substitutions' | 'freevars' | 'parsing' | 'single' | 'multiple' | 'left' | 'right' | 'nonassoc' | 'prec');
 
 HomInnerDots:
     value=DotKind;
