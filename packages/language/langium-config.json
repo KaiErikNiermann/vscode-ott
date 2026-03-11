@@ -6,10 +6,7 @@
             "grammar": "src/ott.langium",
             "fileExtensions": [
                 "ott"
-            ],
-            "textMate": {
-                "out": "syntaxes/ott.tmLanguage.json"
-            }
+            ]
         }
     ],
     "out": "src/generated"
