@@ -317,3 +317,34 @@ describe('Other constructs', () => {
         expect(doc.parseResult.value.items.length).toBeGreaterThanOrEqual(3);
     });
 });
+
+describe('Real-world files', () => {
+
+    test('parse thesis test.ott (indexvar, formula with dots, embed with Coq)', async () => {
+        const doc = await parse(
+            "indexvar index, i, j, n, m  ::= {{ isa nat }} {{ coq nat }} {{ hol num }} {{ lex numeral }}\n" +
+            "  {{ com indices }}\n\n" +
+            "grammar\n" +
+            "formula :: formula_ ::=\n" +
+            "  | formula1 .. formulan   :: :: dots\n" +
+            "  | j INDEXES t1 .. tn                  ::   :: Indexesv\n" +
+            "        {{ coq (1 <= [[j]] /\\ [[j]] <= length (unmake_list't [[t1..tn]])) }}\n" +
+            "        {{ hol (1 <= [[j]] /\\ [[j]] <= LENGTH [[t1..tn]]) }}\n" +
+            "        {{ isa (1 <= [[j]] & [[j]] <= length [[t1..tn]]) }}\n" +
+            "  | j INDEXES T1 .. Tn                  ::   :: IndexesT\n" +
+            "        {{ coq (1 <= [[j]] /\\ [[j]] <= length (unmake_list'T [[T1..Tn]])) }}\n" +
+            "        {{ hol (1 <= [[j]] /\\ [[j]] <= LENGTH [[T1..Tn]]) }}\n" +
+            "        {{ isa (1 <= [[j]] & [[j]] <= length [[T1..Tn]]) }}\n\n" +
+            "embed\n" +
+            "{{ coq\n" +
+            "(*\n" +
+            "These definitions are a hack.\n" +
+            "*)\n" +
+            "Definition list'T : Set. exact list_T || exact (list T). Defined.\n" +
+            "Definition unmake_list'T : list'T -> list T.\n" +
+            "  exact unmake_list_T || exact (fun x => x). Defined.\n" +
+            "}}"
+        );
+        expectNoErrors(doc);
+    });
+});
