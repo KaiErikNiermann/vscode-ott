@@ -20,13 +20,10 @@ afterEach(async () => {
 describe('Linking tests', () => {
 
     test('parse without linking errors', async () => {
-        document = await parse(`
-            metavar x ::=
-
-            grammar
-            t :: 'ty_' ::=
-              | x :: :: var
-        `);
+        document = await parse(
+            "metavar x ::=\n\n" +
+            "grammar\nt :: 'ty_' ::=\n  | x :: :: var"
+        );
 
         expect(document.parseResult.parserErrors).toHaveLength(0);
         expect(isSourceFile(document.parseResult.value)).toBe(true);

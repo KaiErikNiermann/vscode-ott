@@ -16,16 +16,14 @@ beforeAll(async () => {
 describe('Validating', () => {
 
     test('valid defn rule produces no errors', async () => {
-        const document = await parse(`
-            defns typing :: 'ty_' ::=
-
-            defn G |- e : t :: :: typing :: 'ty_'
-            by
-
-            x : t in G
-            ---- :: T_Var
-            G |- x : t
-        `);
+        const document = await parse(
+            "defns typing :: '' ::=\n\n" +
+            "defn G |- e : t :: :: typing :: 'ty_'\n" +
+            "by\n\n" +
+            "x : t in G\n" +
+            "---- :: T_Var\n" +
+            "G |- x : t"
+        );
 
         expect(document.parseResult.parserErrors).toHaveLength(0);
         expect(isSourceFile(document.parseResult.value)).toBe(true);
@@ -34,13 +32,10 @@ describe('Validating', () => {
     });
 
     test('valid metavar produces no errors', async () => {
-        const document = await parse(`
-            metavar x, y ::=
-        `);
+        const document = await parse('metavar x, y ::=');
 
         expect(document.parseResult.parserErrors).toHaveLength(0);
         const errors = document.diagnostics?.filter(d => d.severity === 1) ?? [];
         expect(errors).toHaveLength(0);
     });
 });
-
