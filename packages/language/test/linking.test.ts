@@ -1,20 +1,16 @@
 import { afterEach, beforeAll, describe, expect, test } from "vitest";
 import { EmptyFileSystem, type LangiumDocument } from "langium";
-import { expandToString as s } from "langium/generate";
 import { clearDocuments, parseHelper } from "langium/test";
-import type { Model } from "ott-language";
-import { createOttServices, isModel } from "ott-language";
+import type { SourceFile } from "ott-language";
+import { createOttServices, isSourceFile } from "ott-language";
 
 let services: ReturnType<typeof createOttServices>;
-let parse:    ReturnType<typeof parseHelper<Model>>;
-let document: LangiumDocument<Model> | undefined;
+let parse: ReturnType<typeof parseHelper<SourceFile>>;
+let document: LangiumDocument<SourceFile> | undefined;
 
 beforeAll(async () => {
     services = createOttServices(EmptyFileSystem);
-    parse = parseHelper<Model>(services.Ott);
-
-    // activate the following if your linking test requires elements from a built-in library, for example
-    // await services.shared.workspace.WorkspaceManager.initializeWorkspace([]);
+    parse = parseHelper<SourceFile>(services.Ott);
 });
 
 afterEach(async () => {
@@ -23,31 +19,16 @@ afterEach(async () => {
 
 describe('Linking tests', () => {
 
-    test('linking of greetings', async () => {
+    test('parse without linking errors', async () => {
         document = await parse(`
-            person Langium
-            Hello Langium!
+            metavar x ::=
+
+            grammar
+            t :: 'ty_' ::=
+              | x :: :: var
         `);
 
-        expect(
-            // here we first check for validity of the parsed document object by means of the reusable function
-            //  'checkDocumentValid()' to sort out (critical) typos first,
-            // and then evaluate the cross references we're interested in by checking
-            //  the referenced AST element as well as for a potential error message;
-            checkDocumentValid(document)
-                || document.parseResult.value.greetings.map(g => g.person.ref?.name || g.person.error?.message).join('\n')
-        ).toBe(s`
-            Langium
-        `);
+        expect(document.parseResult.parserErrors).toHaveLength(0);
+        expect(isSourceFile(document.parseResult.value)).toBe(true);
     });
 });
-
-function checkDocumentValid(document: LangiumDocument): string | undefined {
-    return document.parseResult.parserErrors.length && s`
-        Parser errors:
-          ${document.parseResult.parserErrors.map(e => e.message).join('\n  ')}
-    `
-        || document.parseResult.value === undefined && `ParseResult is 'undefined'.`
-        || !isModel(document.parseResult.value) && `Root AST object is a ${document.parseResult.value.$type}, expected a 'Model'.`
-        || undefined;
-}
