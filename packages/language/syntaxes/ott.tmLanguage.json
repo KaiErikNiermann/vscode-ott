@@ -1,0 +1,147 @@
+{
+  "name": "ott",
+  "scopeName": "source.ott",
+  "fileTypes": ["ott"],
+  "patterns": [
+    { "include": "#comment" },
+    { "include": "#homomorphism" },
+    { "include": "#keyword-block" },
+    { "include": "#keyword-decl" },
+    { "include": "#keyword-control" },
+    { "include": "#rule-separator" },
+    { "include": "#comprehension" },
+    { "include": "#dot-form" },
+    { "include": "#punctuation-double" },
+    { "include": "#punctuation-single" },
+    { "include": "#namespace-prefix" }
+  ],
+  "repository": {
+    "comment": {
+      "name": "comment.line.percentage.ott",
+      "match": "%.*$"
+    },
+
+    "keyword-block": {
+      "name": "keyword.control.block.ott",
+      "match": "\\b(grammar|defns|defn|embed|subrules|substitutions|freevars|parsing)\\b"
+    },
+
+    "keyword-decl": {
+      "name": "keyword.declaration.ott",
+      "match": "\\b(metavar|indexvar)\\b"
+    },
+
+    "keyword-control": {
+      "name": "keyword.control.ott",
+      "match": "\\b(by|IN|single|multiple|left|right|nonassoc|prec)\\b"
+    },
+
+    "homomorphism": {
+      "name": "meta.homomorphism.ott",
+      "begin": "(\\{\\{)\\s*([a-zA-Z][\\w-]*)",
+      "end": "(\\}\\})",
+      "beginCaptures": {
+        "1": { "name": "punctuation.definition.homomorphism.begin.ott" },
+        "2": { "name": "entity.name.type.hom-name.ott" }
+      },
+      "endCaptures": {
+        "1": { "name": "punctuation.definition.homomorphism.end.ott" }
+      },
+      "patterns": [
+        { "include": "#hom-inner-block" },
+        { "include": "#dot-form" },
+        { "include": "#hom-string" }
+      ]
+    },
+
+    "hom-inner-block": {
+      "name": "meta.hom-inner-block.ott",
+      "begin": "(\\[\\[)",
+      "end": "(\\]\\])",
+      "beginCaptures": {
+        "1": { "name": "punctuation.definition.inner-block.begin.ott" }
+      },
+      "endCaptures": {
+        "1": { "name": "punctuation.definition.inner-block.end.ott" }
+      },
+      "patterns": [
+        { "include": "#dot-form" },
+        {
+          "name": "variable.other.inner-ref.ott",
+          "match": "[^\\s\\[\\]]+"
+        }
+      ]
+    },
+
+    "hom-string": {
+      "name": "string.unquoted.hom-body.ott",
+      "match": "[^\\s\\[\\]{}]+"
+    },
+
+    "rule-separator": {
+      "name": "meta.rule-separator.ott",
+      "match": "(----[-]*)(\\s*::\\s*)([a-zA-Z_]\\w*)",
+      "captures": {
+        "1": { "name": "markup.bold.dash-line.ott" },
+        "2": { "name": "punctuation.separator.double-colon.ott" },
+        "3": { "name": "entity.name.tag.rule-name.ott" }
+      }
+    },
+
+    "comprehension": {
+      "name": "meta.comprehension.ott",
+      "begin": "(<\\/)",
+      "end": "(\\/>)",
+      "beginCaptures": {
+        "1": { "name": "punctuation.definition.comprehension.begin.ott" }
+      },
+      "endCaptures": {
+        "1": { "name": "punctuation.definition.comprehension.end.ott" }
+      },
+      "patterns": [
+        { "include": "#comment" },
+        {
+          "name": "punctuation.separator.comprehension.ott",
+          "match": "\\/\\/"
+        },
+        { "include": "#dot-form" },
+        {
+          "name": "keyword.control.ott",
+          "match": "\\bIN\\b"
+        }
+      ]
+    },
+
+    "dot-form": {
+      "name": "keyword.operator.dots.ott",
+      "match": "\\.{2,4}"
+    },
+
+    "punctuation-double": {
+      "patterns": [
+        {
+          "name": "keyword.operator.definition.ott",
+          "match": "::="
+        },
+        {
+          "name": "keyword.operator.subrule.ott",
+          "match": "<::"
+        },
+        {
+          "name": "punctuation.separator.double-colon.ott",
+          "match": "::"
+        }
+      ]
+    },
+
+    "punctuation-single": {
+      "name": "punctuation.separator.comma.ott",
+      "match": ","
+    },
+
+    "namespace-prefix": {
+      "name": "string.quoted.single.namespace.ott",
+      "match": "'[\\w-]*'"
+    }
+  }
+}
