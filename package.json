@@ -11,12 +11,20 @@
         "build:clean": "npm run clean && npm run build",
         "langium:generate": "npm run --workspace packages/language langium:generate",
         "langium:watch": "npm run --workspace packages/language langium:watch",
-        "test": "npm run --workspace packages/language test"
+        "test": "npm run --workspace packages/language test",
+        "lint": "eslint packages/*/src/**/*.ts",
+        "lint:fix": "eslint --fix packages/*/src/**/*.ts"
     },
     "devDependencies": {
+        "@eslint/js": "^10.0.1",
         "@types/node": "~20.17.48",
+        "eslint": "^10.0.3",
+        "eslint-plugin-security": "^4.0.0",
+        "eslint-plugin-sonarjs": "^4.0.2",
+        "eslint-plugin-unicorn": "^63.0.0",
         "shx": "~0.4.0",
-        "typescript": "~5.8.3"
+        "typescript": "~5.8.3",
+        "typescript-eslint": "^8.57.0"
     },
     "volta": {
         "node": "20.19.2",
