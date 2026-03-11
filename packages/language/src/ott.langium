@@ -27,10 +27,22 @@ GrammarBlock:
 GrammarRule:
     names+=StringDesc (',' names+=StringDesc)* '::' namespace=NamespacePrefix '::=' homomorphisms+=Homomorphism* productions+=Production*;
 
-// In Ott source, productions start with '|' but since '|' can also
-// appear in element text (like '|-'), we treat it as part of the elements.
 Production:
-    elements+=Element+ '::' modifiers+=ID* '::' name=ID homomorphisms+=Homomorphism*;
+    '|' elements+=ProductionElement* '::' modifiers+=ID* '::' name=ID
+    (homomorphisms+=Homomorphism | bindspecs+=BindSpec)*;
+
+ProductionElement:
+    Comprehension | Dots | ProductionStringElement;
+
+// Productions can contain '|' mid-element (e.g., case ... | ...).
+ProductionStringElement:
+    value=(ID | ELEMENT_STRING | INT | '|' | ',' | '.' | '/' | '<' | '>' | '{' | '}');
+
+BindSpec:
+    '(+' body+=BindSpecToken+ '+)';
+
+BindSpecToken:
+    value=(ID | ELEMENT_STRING | INT | '|' | ',' | '.' | '/' | '<' | '>' | '{' | '}');
 
 // ──────────────────────────────────────
 // Definition classes (inference rules)
@@ -42,25 +54,33 @@ DefnClass:
 // The body after 'by' is a flat sequence of elements and rule separators,
 // because Ott's line-oriented rule structure doesn't map to LL parsing with hidden newlines.
 Defn:
-    'defn' elements+=Element* '::' '::' name=ID '::' namespace=NamespacePrefix homomorphisms+=Homomorphism* 'by' body+=DefnBodyItem*;
+    'defn' elements+=DefnElement* '::' '::' name=ID '::' namespace=NamespacePrefix
+    (homomorphisms+=Homomorphism | bindspecs+=BindSpec)* 'by' body+=DefnBodyItem*;
+
+DefnElement:
+    Comprehension | Dots | DefnStringElement;
+
+// Defn elements can also contain '|' and ','.
+DefnStringElement:
+    value=(ID | ELEMENT_STRING | INT | '|' | ',' | '.' | '/' | '<' | '>' | '{' | '}');
 
 DefnBodyItem:
-    RuleSeparator | Element;
+    RuleSeparator | DefnBodyElement;
+
+// Defn body elements can contain '|' ',' and 'IN' (which is not a keyword here).
+DefnBodyElement:
+    Comprehension | Dots | DefnBodyStringElement;
+
+DefnBodyStringElement:
+    value=(ID | ELEMENT_STRING | INT | '|' | ',' | '.' | '/' | '<' | '>' | '{' | '}');
 
 RuleSeparator:
     line=DASH_LINE '::' name=ID;
 
 // ──────────────────────────────────────
-// Elements (shared building blocks)
+// Elements (shared for non-production, non-defn contexts)
 // ──────────────────────────────────────
 
-Element:
-    Comprehension | Dots | StringElement;
-
-StringElement:
-    value=(ID | ELEMENT_STRING);
-
-// Dot forms are keywords so they take priority over ELEMENT_STRING.
 Dots:
     value=DotKind;
 
@@ -68,10 +88,22 @@ DotKind returns string:
     '..' | '...' | '....';
 
 Comprehension:
-    '</' elements+=Element* '//' (separator=(ID | ELEMENT_STRING | ',') '//')? bound=ComprehensionBound '/>';
+    '</' elements+=ComprehensionElement* '//' (separator=ComprehensionSep '//')? bound=ComprehensionBound '/>';
 
+ComprehensionElement:
+    Dots | ComprehensionStringElement;
+
+ComprehensionStringElement:
+    value=(ID | ELEMENT_STRING | INT | '|' | ',' | '.' | '/' | '<' | '>' | '{' | '}');
+
+ComprehensionSep:
+    value=(ID | ELEMENT_STRING | INT | ',' | '|' | '.' | '/');
+
+// 'IN' is not a keyword — we match it as an ID and check structurally.
+// ComprehensionBound: var (ID upper)? (.. (ID|INT))?
+// This handles: i, i IN n, i IN 1..n
 ComprehensionBound:
-    variable=ID ('IN' lower=(ID | INT) ('..' upper=(ID | INT))?)?;
+    variable=ID (in=ID lower=(ID | INT) ('..' upper=(ID | INT))?)?;
 
 // ──────────────────────────────────────
 // Homomorphisms
@@ -81,13 +113,15 @@ Homomorphism:
     '{{' name=HomName body+=HomElement* '}}';
 
 HomName:
-    value=ID;
+    value=(ID | ELEMENT_STRING);
 
 HomElement:
     HomInnerBlock | HomDots | HomString;
 
+// Inside hom bodies, almost any token can appear.
 HomString:
-    value=(ID | ELEMENT_STRING);
+    value=(ID | ELEMENT_STRING | INT | ',' | '|' | '.' | '/' | '<' | '>' | '{' | '}' | '::' | '::=' | '</' | '/>' | '//'
+        | '..' | '...' | '....' | '(+' | '+)' | '<::');
 
 HomDots:
     value=DotKind;
@@ -99,7 +133,7 @@ HomInnerElement:
     HomInnerComprehension | HomInnerDots | HomInnerString;
 
 HomInnerString:
-    value=(ID | ELEMENT_STRING);
+    value=(ID | ELEMENT_STRING | INT | ',' | '|' | '.' | '/');
 
 HomInnerDots:
     value=DotKind;
@@ -151,7 +185,7 @@ ParsingBlock:
     'parsing' directives+=ParsingDirective+;
 
 ParsingDirective:
-    nonterminal=ID (('prec' level=INT) | assoc=AssocKind);
+    nonterminal=ID (('prec' level=INT) | assoc=AssocKind nonterminal2=ID?);
 
 AssocKind returns string:
     'left' | 'right' | 'nonassoc';
@@ -168,7 +202,7 @@ StringDesc:
 // ──────────────────────────────────────
 
 NamespacePrefix:
-    {infer NamespacePrefix} ("'" value=ID? "'" | value=ID | value=ELEMENT_STRING);
+    {infer NamespacePrefix} (value=NAMESPACE_PREFIX | value=ID);
 
 // ──────────────────────────────────────
 // Terminals (order matters: first declared wins for same-length match)
@@ -179,9 +213,11 @@ hidden terminal NL: /\r?\n/;
 hidden terminal COMMENT: /%[^\n\r]*/;
 
 terminal DASH_LINE: /----[-]*/;
-terminal ID: /[a-zA-Z_]\w*/;
-terminal INT returns number: /\d+/;
-// Matches non-whitespace runs excluding chars used in keywords/delimiters: , ' { } [ ] < > /
-// Notably includes | : - ( ) . so that |- |= : () etc. work as single tokens.
-// Keywords like '::' '::=' '..' '...' '....' take priority over this for exact matches.
-terminal ELEMENT_STRING: /[^\s,'{}[\]<>/][^\s,'{}[\]<>/]*/;
+// Quoted namespace prefix including quotes: 'ty_', '', 'formula_'
+terminal NAMESPACE_PREFIX: /'[\w-]*'/;
+// Identifiers including primes for variables like t', x''
+terminal ID: /[a-zA-Z_][\w']*/;
+terminal INT: /\d+/;
+// Matches any non-whitespace run excluding , . / < > { } (so that // </ /> .. {{ }} split correctly).
+// These excluded chars are available as keyword tokens in element rules.
+terminal ELEMENT_STRING: /[^\s,./<>{}][^\s,./<>{}]*/;
