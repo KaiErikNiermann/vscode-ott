@@ -1,4 +1,4 @@
-import type { Model } from 'ott-language';
+import type { SourceFile } from 'ott-language';
 import { createOttServices, OttLanguageMetaData } from 'ott-language';
 import chalk from 'chalk';
 import { Command } from 'commander';
@@ -15,7 +15,7 @@ const packageContent = await fs.readFile(packagePath, 'utf-8');
 
 export const generateAction = async (fileName: string, opts: GenerateOptions): Promise<void> => {
     const services = createOttServices(NodeFileSystem).Ott;
-    const model = await extractAstNode<Model>(fileName, services);
+    const model = await extractAstNode<SourceFile>(fileName, services);
     const generatedFilePath = generateJavaScript(model, fileName, opts.destination);
     console.log(chalk.green(`JavaScript code generated successfully: ${generatedFilePath}`));
 };
