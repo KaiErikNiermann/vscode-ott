@@ -112,11 +112,20 @@ describe('Metavar formatting', () => {
         expect(result.trim()).toMatch(/^metavar /);
     });
 
-    test('homomorphisms stay on same line', async () => {
+    test('single homomorphism stays inline', async () => {
+        const result = await expectIdempotent(
+            "metavar x ::= {{ isa nat }}",
+        );
+        expect(result).toContain('::= {{ isa');
+    });
+
+    test('multiple homomorphisms wrap to indented lines', async () => {
         const result = await expectIdempotent(
             "metavar x ::= {{ isa nat }} {{ coq nat }}",
         );
-        expect(result).toContain('::= {{ isa');
+        expect(result).toContain('::=\n');
+        expect(result).toContain('  {{ isa nat }}');
+        expect(result).toContain('  {{ coq nat }}');
     });
 });
 
@@ -205,10 +214,24 @@ describe('Homomorphism formatting', () => {
         expect(result).toContain('{{ isa nat }}');
     });
 
-    test('multiple homomorphisms', async () => {
+    test('multiple homomorphisms wrap to indented lines', async () => {
         const result = await expectIdempotent(
             "metavar x ::= {{ isa nat }} {{ coq nat }} {{ hol num }}",
         );
+        // Each hom on its own indented line
+        expect(result).toContain('  {{ isa nat }}');
+        expect(result).toContain('  {{ coq nat }}');
+        expect(result).toContain('  {{ hol num }}');
+        await expectValidOtt(result);
+    });
+
+    test('production homs always indented even if single', async () => {
+        const result = await expectIdempotent(
+            "grammar\nformula :: formula_ ::=\n  | j INDEXES t1 :: :: Indexesv {{ coq (1 <= j) }}",
+        );
+        // Production hom should be on indented line, not inline
+        expect(result).toContain('Indexesv\n');
+        expect(result).toContain('{{ coq (1 <= j) }}');
         await expectValidOtt(result);
     });
 });

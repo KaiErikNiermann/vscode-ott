@@ -1,4 +1,5 @@
 import type { AstNode } from 'langium';
+import type { NodeFormatter } from 'langium/lsp';
 import { AbstractFormatter, Formatting } from 'langium/lsp';
 import { match } from 'ts-pattern';
 import type {
@@ -42,6 +43,27 @@ export class OttFormatter extends AbstractFormatter {
             .otherwise(() => { /* no formatting for other nodes */ });
     }
 
+    // ── Shared helpers ─────────────────────────────────────────
+
+    /**
+     * Format a list of homomorphisms on a parent node.
+     * - Single hom: stays inline (space before)
+     * - Multiple homs: each on a new indented line
+     * - alwaysIndent: force indentation even for single hom (e.g. on productions)
+     */
+    private formatHoms(
+        formatter: NodeFormatter<AstNode>,
+        homs: readonly Homomorphism[],
+        alwaysIndent = false,
+    ): void {
+        if (homs.length === 0) return;
+        if (!alwaysIndent && homs.length === 1) {
+            formatter.nodes(...homs).prepend(Formatting.oneSpace());
+        } else {
+            formatter.nodes(...homs).prepend(Formatting.indent());
+        }
+    }
+
     // ── Top-level structure ──────────────────────────────────
 
     private formatSourceFile(node: SourceFile): void {
@@ -65,8 +87,8 @@ export class OttFormatter extends AbstractFormatter {
         formatter.keywords(',').prepend(Formatting.noSpace()).append(Formatting.oneSpace());
         // Space around ::=
         formatter.keyword('::=').surround(Formatting.oneSpace());
-        // Homomorphisms: space between them
-        formatter.nodes(...node.homomorphisms).prepend(Formatting.oneSpace());
+        // Homomorphisms: inline if single, indented if multiple
+        this.formatHoms(formatter, node.homomorphisms);
     }
 
     // ── Grammar ──────────────────────────────────────────────
@@ -84,8 +106,8 @@ export class OttFormatter extends AbstractFormatter {
         // Space around :: and ::=
         formatter.keyword('::').surround(Formatting.oneSpace());
         formatter.keyword('::=').surround(Formatting.oneSpace());
-        // Homomorphisms on the header line
-        formatter.nodes(...node.homomorphisms).prepend(Formatting.oneSpace());
+        // Homomorphisms: inline if single, indented if multiple
+        this.formatHoms(formatter, node.homomorphisms);
         // Productions on new indented lines
         formatter.nodes(...node.productions).prepend(Formatting.newLine());
     }
@@ -99,8 +121,8 @@ export class OttFormatter extends AbstractFormatter {
         // Space around the two :: delimiters
         // First :: separates elements from modifiers, second :: from name
         formatter.keywords('::').surround(Formatting.oneSpace());
-        // Homomorphisms and bind specs after name
-        formatter.nodes(...node.homomorphisms).prepend(Formatting.oneSpace());
+        // Homomorphisms always indented on productions (lines are already long)
+        this.formatHoms(formatter, node.homomorphisms, true);
         formatter.nodes(...node.bindspecs).prepend(Formatting.oneSpace());
     }
 
@@ -113,8 +135,8 @@ export class OttFormatter extends AbstractFormatter {
         // Space around :: and ::=
         formatter.keyword('::').surround(Formatting.oneSpace());
         formatter.keyword('::=').surround(Formatting.oneSpace());
-        // Homomorphisms on header
-        formatter.nodes(...node.homomorphisms).prepend(Formatting.oneSpace());
+        // Homomorphisms: inline if single, indented if multiple
+        this.formatHoms(formatter, node.homomorphisms);
         // Blank line before each defn
         formatter.nodes(...node.definitions).prepend(Formatting.newLines(2));
     }
@@ -131,8 +153,8 @@ export class OttFormatter extends AbstractFormatter {
         formatter.keyword('by').prepend(Formatting.oneSpace());
         // Body items: new line for each
         formatter.nodes(...node.body).prepend(Formatting.newLine());
-        // Homomorphisms and bind specs on header
-        formatter.nodes(...node.homomorphisms).prepend(Formatting.oneSpace());
+        // Homomorphisms: inline if single, indented if multiple
+        this.formatHoms(formatter, node.homomorphisms);
         formatter.nodes(...node.bindspecs).prepend(Formatting.oneSpace());
     }
 
