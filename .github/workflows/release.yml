@@ -1,0 +1,63 @@
+name: Release VS Code Extension
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Generate Langium artifacts
+        run: pnpm run langium:generate
+
+      - name: Build
+        run: pnpm run build
+
+      - name: Test
+        run: pnpm run test
+
+      - name: Package extension
+        run: pnpm dlx @vscode/vsce package --no-dependencies
+        working-directory: packages/extension
+
+      - name: Upload VSIX artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: vscode-ott-${{ github.ref_name }}
+          path: packages/extension/*.vsix
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: packages/extension/*.vsix
+          generate_release_notes: true
+
+      - name: Publish to VS Code Marketplace
+        if: vars.PUBLISH_MARKETPLACE == 'true'
+        run: pnpm dlx @vscode/vsce publish --no-dependencies --packagePath *.vsix
+        working-directory: packages/extension
+        env:
+          VSCE_PAT: ${{ secrets.VSCE_PAT }}
+
+      - name: Publish to Open VSX
+        if: vars.PUBLISH_OPENVSX == 'true'
+        run: pnpm dlx ovsx publish *.vsix
+        working-directory: packages/extension
+        env:
+          OVSX_PAT: ${{ secrets.OVSX_PAT }}
