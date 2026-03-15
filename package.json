@@ -5,15 +5,15 @@
     "type": "module",
     "private": true,
     "scripts": {
-        "clean": "npm run clean --workspaces",
+        "clean": "pnpm -r run clean",
         "watch": "tsc -b tsconfig.build.json --watch",
-        "build": "tsc -b tsconfig.build.json && npm run build --workspaces",
-        "build:clean": "npm run clean && npm run build",
-        "langium:generate": "npm run --workspace packages/language langium:generate",
-        "langium:watch": "npm run --workspace packages/language langium:watch",
-        "test": "npm run --workspace packages/language test",
-        "lint": "eslint packages/*/src/**/*.ts",
-        "lint:fix": "eslint --fix packages/*/src/**/*.ts"
+        "build": "tsc -b tsconfig.build.json && pnpm -r run build",
+        "build:clean": "pnpm run clean && pnpm run build",
+        "langium:generate": "pnpm --filter ott-language run langium:generate",
+        "langium:watch": "pnpm --filter ott-language run langium:watch",
+        "test": "pnpm --filter ott-language run test",
+        "lint": "eslint --no-warn-ignored packages/*/src/**/*.ts",
+        "lint:fix": "eslint --fix --no-warn-ignored packages/*/src/**/*.ts"
     },
     "devDependencies": {
         "@eslint/js": "^10.0.1",
@@ -27,16 +27,10 @@
         "typescript-eslint": "^8.57.0"
     },
     "volta": {
-        "node": "20.19.2",
-        "npm": "10.8.2"
+        "node": "20.19.2"
     },
+    "packageManager": "pnpm@10.14.0",
     "bin": {
         "ott-language-server": "./bin/ott-language-server"
-    },
-    "workspaces": [
-        "packages/language",
-        "packages/cli",
-        "packages/extension",
-        "editors/neovim"
-    ]
+    }
 }

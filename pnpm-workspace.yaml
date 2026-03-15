@@ -1,0 +1,5 @@
+packages:
+  - packages/language
+  - packages/cli
+  - packages/extension
+  - editors/neovim
