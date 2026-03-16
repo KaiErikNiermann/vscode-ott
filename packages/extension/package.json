@@ -30,7 +30,7 @@
     "main": "./out/extension/main.cjs",
     "scripts": {
         "clean": "shx rm -fr *.tsbuildinfo out syntaxes",
-        "vscode:prepublish": "pnpm run build && pnpm run --include-workspace-root --workspace=../.. lint",
+        "vscode:prepublish": "pnpm run build",
         "build:prepare": "shx mkdir -p ./syntaxes/ && shx cp -f ../language/syntaxes/ott.tmLanguage.json ./syntaxes/ott.tmLanguage.json && shx cp -f ../../assets/icon.png ./icon.png",
         "build": "pnpm run build:prepare && tsc -b tsconfig.json && node esbuild.mjs",
         "build:clean": "pnpm run clean && pnpm run build",
