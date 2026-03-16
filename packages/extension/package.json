@@ -37,7 +37,7 @@
     },
     "dependencies": {
         "ott-language": "workspace:*",
-        "langium": "~4.0.0",
+        "langium": "~4.2.1",
         "vscode-languageclient": "~9.0.1",
         "vscode-languageserver": "~9.0.1"
     },
