@@ -9,5 +9,6 @@ out/
 **/src/generated
 packages/extension/syntaxes/
 packages/extension/icon.png
+packages/extension/LICENSE
 *.tsbuildinfo
 *.vsix
