@@ -8,5 +8,6 @@ dist/
 out/
 **/src/generated
 packages/extension/syntaxes/
+packages/extension/icon.png
 *.tsbuildinfo
 *.vsix

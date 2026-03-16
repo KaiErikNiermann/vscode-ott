@@ -1,6 +1,12 @@
-# vscode-ott
+<p align="center">
+  <img src="assets/icon.png" alt="vscode-ott" width="128" />
+</p>
 
-Language support for the [Ott](https://github.com/ott-lang/ott) specification language in VS Code and Neovim.
+<h1 align="center">vscode-ott</h1>
+
+<p align="center">
+  Language support for the <a href="https://github.com/ott-lang/ott">Ott</a> specification language in VS Code and Neovim.
+</p>
 
 Ott is a tool for writing definitions of programming languages and calculi, developed by Peter Sewell and collaborators. It generates LaTeX, Coq, HOL, and Isabelle definitions from a single concise source. This project provides IDE tooling to make writing `.ott` files easier.
 
