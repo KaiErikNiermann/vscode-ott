@@ -4,7 +4,7 @@
     "version": "0.0.1",
     "type": "module",
     "engines": {
-        "node": ">=20.10.0"
+        "node": ">=22.0.0"
     },
     "files": [
         "out",
@@ -39,10 +39,11 @@
         "vscode-languageserver": "^9.0.1"
     },
     "devDependencies": {
+        "@types/node": "~25.5.2",
         "langium-cli": "~4.2.0",
         "vitest": "~4.1.2"
     },
     "volta": {
-        "node": "20.19.2"
+        "node": "22.20.0"
     }
 }
