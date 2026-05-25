@@ -26,7 +26,7 @@
         "commander": "~14.0.3"
     },
     "devDependencies": {
-        "@types/node": "~25.9.0"
+        "@types/node": "~25.9.1"
     },
     "volta": {
         "node": "22.20.0"
