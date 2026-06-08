@@ -16,6 +16,23 @@ updates:
         dependency-type: production
         update-types:
           - patch
+    ignore:
+      # The LSP stack version is dictated by langium (it pins vscode-languageserver@~9,
+      # protocol ~3.17.5, jsonrpc ~8.2.0). The extension passes its connection into
+      # langium's service factory, so these must share langium's LSP types. Major bumps
+      # here break that compatibility — only move them when langium itself upgrades.
+      - dependency-name: vscode-languageserver
+        update-types:
+          - version-update:semver-major
+      - dependency-name: vscode-languageclient
+        update-types:
+          - version-update:semver-major
+      - dependency-name: vscode-languageserver-protocol
+        update-types:
+          - version-update:semver-major
+      - dependency-name: vscode-jsonrpc
+        update-types:
+          - version-update:semver-major
     labels:
       - dependencies
 
