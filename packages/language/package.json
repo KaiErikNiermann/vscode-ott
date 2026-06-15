@@ -39,7 +39,7 @@
         "vscode-languageserver": "^9.0.1"
     },
     "devDependencies": {
-        "@types/node": "~25.9.2",
+        "@types/node": "~25.9.3",
         "langium-cli": "~4.2.1",
         "vitest": "~4.1.8"
     },
