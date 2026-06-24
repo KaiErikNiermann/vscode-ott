@@ -11,8 +11,16 @@ import type {
 export class OttDocumentSymbolProvider implements DocumentSymbolProvider {
 
     getSymbols(document: LangiumDocument): DocumentSymbol[] {
-        const root = document.parseResult.value as SourceFile;
-        return root.items.flatMap(item => this.itemToSymbol(item, document));
+        // The outline is built from a possibly error-recovered AST whose
+        // "required" fields may be undefined. Never let that turn into a failed
+        // LSP request — return whatever symbols we can and log the cause.
+        try {
+            const root = document.parseResult.value as SourceFile;
+            return (root.items ?? []).flatMap(item => this.itemToSymbol(item, document));
+        } catch (error) {
+            console.error('[ott] documentSymbol failed on partial AST:', error);
+            return [];
+        }
     }
 
     private itemToSymbol(item: Item, document: LangiumDocument): DocumentSymbol[] {
@@ -63,7 +71,8 @@ export class OttDocumentSymbolProvider implements DocumentSymbolProvider {
     }
 
     private embedSymbol(node: EmbedBlock, document: LangiumDocument): DocumentSymbol {
-        const targets = node.homomorphisms.map(h => h.name.value).join(', ');
+        // `name` is single-valued and may be undefined on an error-recovered parse.
+        const targets = node.homomorphisms.map(h => h.name?.value ?? '').join(', ');
         return this.makeSymbol(`embed {{ ${targets} }}`, SymbolKind.Object, node, document);
     }
 

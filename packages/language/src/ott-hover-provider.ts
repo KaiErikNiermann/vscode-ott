@@ -31,16 +31,25 @@ export class OttHoverProvider implements HoverProvider {
         document: LangiumDocument,
         params: HoverParams,
     ): MaybePromise<Hover | undefined> {
-        const root = document.parseResult.value as SourceFile;
-        const rootCst = root.$cstNode;
-        if (!rootCst) return undefined;
+        // Hover runs at an arbitrary cursor position over a possibly
+        // error-recovered AST whose "required" fields may be undefined. Never
+        // let a malformed node turn into a failed LSP request — degrade to "no
+        // hover" and log so the cause stays visible in the server output.
+        try {
+            const root = document.parseResult.value as SourceFile;
+            const rootCst = root.$cstNode;
+            if (!rootCst) return undefined;
 
-        const offset = document.textDocument.offsetAt(params.position);
-        const leaf = CstUtils.findLeafNodeAtOffset(rootCst, offset);
-        if (!leaf) return undefined;
+            const offset = document.textDocument.offsetAt(params.position);
+            const leaf = CstUtils.findLeafNodeAtOffset(rootCst, offset);
+            if (!leaf) return undefined;
 
-        const node = leaf.astNode;
-        return this.hoverForNode(node, leaf, root);
+            const node = leaf.astNode;
+            return this.hoverForNode(node, leaf, root);
+        } catch (error) {
+            console.error('[ott] hover failed on partial AST:', error);
+            return undefined;
+        }
     }
 
     private hoverForNode(
@@ -83,7 +92,9 @@ export class OttHoverProvider implements HoverProvider {
 
     private hoverGrammarRule(node: GrammarRule): Hover | undefined {
         const names = node.names.map(n => n.name).join(', ');
-        const ns = node.namespace.value ?? '';
+        // `namespace` is single-valued: on an error-recovered parse it can be
+        // undefined even though the generated type marks it required.
+        const ns = node.namespace?.value ?? '';
         const prodCount = node.productions.length;
         const lines = [
             `**Grammar rule** \`${names}\` :: \`${ns}\``,
@@ -233,10 +244,13 @@ export class OttHoverProvider implements HoverProvider {
         if (homs.length === 0) return '';
         return homs
             .map(h => {
-                const desc = HOM_DESCRIPTIONS[h.name.value];
+                // `name` is single-valued and may be undefined on a partial parse.
+                const homName = h.name?.value ?? '';
+                // eslint-disable-next-line security/detect-object-injection -- HOM_DESCRIPTIONS is a const we control
+                const desc = HOM_DESCRIPTIONS[homName];
                 return desc
-                    ? `- \`{{ ${h.name.value} }}\` — ${desc.split('—')[0].trim()}`
-                    : `- \`{{ ${h.name.value} }}\``;
+                    ? `- \`{{ ${homName} }}\` — ${desc.split('—')[0].trim()}`
+                    : `- \`{{ ${homName} }}\``;
             })
             .join('\n');
     }

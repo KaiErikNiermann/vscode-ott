@@ -23,6 +23,16 @@ import type {
 export class OttFormatter extends AbstractFormatter {
 
     protected format(node: AstNode): void {
+        // Formatting walks a possibly error-recovered AST. A throw here would
+        // fail the whole formatting request, so isolate each node.
+        try {
+            this.formatNode(node);
+        } catch (error) {
+            console.error('[ott] formatting failed on a node, skipping:', error);
+        }
+    }
+
+    private formatNode(node: AstNode): void {
         match(node.$type)
             .with('SourceFile', () => this.formatSourceFile(node as SourceFile))
             .with('MetavarDefn', () => this.formatMetavarDefn(node as MetavarDefn))
