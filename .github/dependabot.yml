@@ -33,6 +33,15 @@ updates:
       - dependency-name: vscode-jsonrpc
         update-types:
           - version-update:semver-major
+      # @types/vscode is coupled to engines.vscode in packages/extension: vsce
+      # refuses to package when @types/vscode is newer than the declared engine
+      # floor (^1.110.0). @types/vscode ships one minor per VS Code minor, so
+      # ignore minor+major bumps — raise both together by hand when lifting the
+      # minimum supported VS Code version.
+      - dependency-name: '@types/vscode'
+        update-types:
+          - version-update:semver-major
+          - version-update:semver-minor
     labels:
       - dependencies
 

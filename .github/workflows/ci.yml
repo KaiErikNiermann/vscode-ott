@@ -37,3 +37,10 @@ jobs:
 
       - name: Test
         run: pnpm run test
+
+      # Mirrors the release "Package extension" step so packaging failures
+      # (e.g. @types/vscode newer than engines.vscode) are caught on PRs
+      # instead of only when a release tag is pushed.
+      - name: Package extension (dry-run)
+        run: pnpm dlx @vscode/vsce package --no-dependencies --out /tmp/vscode-ott-ci.vsix
+        working-directory: packages/extension
