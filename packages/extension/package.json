@@ -1,7 +1,7 @@
 {
     "name": "vscode-vscode-ott",
     "description": "Language support for the Ott specification language",
-    "version": "0.0.4",
+    "version": "0.0.5",
     "displayName": "vscode-ott",
     "publisher": "KaiErikNiermann",
     "license": "MIT",
@@ -31,17 +31,26 @@
         "langium"
     ],
     "contributes": {
-        "languages": [{
-            "id": "ott",
-            "aliases": ["Ott", "ott"],
-            "extensions": [".ott"],
-            "configuration": "./language-configuration.json"
-        }],
-        "grammars": [{
-            "language": "ott",
-            "scopeName": "source.ott",
-            "path": "syntaxes/ott.tmLanguage.json"
-        }]
+        "languages": [
+            {
+                "id": "ott",
+                "aliases": [
+                    "Ott",
+                    "ott"
+                ],
+                "extensions": [
+                    ".ott"
+                ],
+                "configuration": "./language-configuration.json"
+            }
+        ],
+        "grammars": [
+            {
+                "language": "ott",
+                "scopeName": "source.ott",
+                "path": "syntaxes/ott.tmLanguage.json"
+            }
+        ]
     },
     "activationEvents": [
         "onLanguage:ott"
@@ -68,6 +77,6 @@
         "esbuild": "~0.28.1"
     },
     "vsce": {
-      "dependencies": false
+        "dependencies": false
     }
 }
