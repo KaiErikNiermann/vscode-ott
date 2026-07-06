@@ -68,7 +68,7 @@
         "ott-language": "workspace:*",
         "langium": "~4.3.1",
         "vscode-languageclient": "~10.0.1",
-        "vscode-languageserver": "~10.0.1"
+        "vscode-languageserver": "~10.1.0"
     },
     "devDependencies": {
         "@types/node": "~26.0.1",
