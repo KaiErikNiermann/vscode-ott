@@ -1,6 +1,7 @@
 import { beforeAll, describe, expect, test } from "vitest";
 import { EmptyFileSystem } from "langium";
 import { parseHelper } from "langium/test";
+import type { Diagnostic } from "vscode-languageserver";
 import type { SourceFile } from "ott-language";
 import { createOttServices, isSourceFile } from "ott-language";
 
@@ -13,13 +14,17 @@ beforeAll(async () => {
     parse = (input: string) => doParse(input, { validation: true });
 });
 
-type Diag = { severity?: number; message: string };
+/** LSP v10 widened `Diagnostic.message` to `string | MarkupContent`; our
+ * validators only emit plain strings, so normalize for string assertions. */
+function msgText(d: Diagnostic): string {
+    return typeof d.message === "string" ? d.message : d.message.value;
+}
 
 /** Diagnostics helpers: severity 1 = error, 2 = warning, 3 = info */
-function errors(doc: { diagnostics?: Diag[] }) {
+function errors(doc: { diagnostics?: Diagnostic[] }) {
     return doc.diagnostics?.filter(d => d.severity === 1) ?? [];
 }
-function warnings(doc: { diagnostics?: Diag[] }) {
+function warnings(doc: { diagnostics?: Diagnostic[] }) {
     return doc.diagnostics?.filter(d => d.severity === 2) ?? [];
 }
 
@@ -73,7 +78,7 @@ describe('Reference validation', () => {
     test('subrule references undefined nonterminal', async () => {
         const doc = await parse("subrules\nv <:: t");
         expect(warnings(doc).length).toBeGreaterThanOrEqual(2);
-        const msgs = warnings(doc).map(d => d.message);
+        const msgs = warnings(doc).map(msgText);
         expect(msgs.some(m => m.includes("'v'"))).toBe(true);
         expect(msgs.some(m => m.includes("'t'"))).toBe(true);
     });
@@ -82,7 +87,7 @@ describe('Reference validation', () => {
         const doc = await parse("substitutions\nsingle t x :: tsubst");
         const warns = warnings(doc);
         expect(warns.length).toBeGreaterThanOrEqual(2);
-        const msgs = warns.map(d => d.message);
+        const msgs = warns.map(msgText);
         expect(msgs.some(m => m.includes("Nonterminal 't'"))).toBe(true);
         expect(msgs.some(m => m.includes("Metavariable 'x'"))).toBe(true);
     });
@@ -97,7 +102,7 @@ describe('Reference validation', () => {
         const doc = await parse("parsing\nt left");
         const warns = warnings(doc);
         expect(warns.length).toBeGreaterThanOrEqual(1);
-        expect(warns[0].message).toContain("'t'");
+        expect(msgText(warns[0])).toContain("'t'");
     });
 });
 
@@ -106,7 +111,7 @@ describe('Duplicate detection', () => {
     test('duplicate metavar names produce warning', async () => {
         const doc = await parse("metavar x ::=\nmetavar x ::=");
         const warns = warnings(doc);
-        expect(warns.some(w => w.message?.includes("already declared"))).toBe(true);
+        expect(warns.some(w => msgText(w).includes("already declared"))).toBe(true);
     });
 
     test('duplicate nonterminal names produce info', async () => {
@@ -115,6 +120,6 @@ describe('Duplicate detection', () => {
             "grammar\nt :: Tm2 ::=\n  | y :: :: var2"
         );
         const infos = doc.diagnostics?.filter(d => d.severity === 3) ?? [];
-        expect(infos.some(i => i.message?.includes("multiple grammar blocks"))).toBe(true);
+        expect(infos.some(i => msgText(i).includes("multiple grammar blocks"))).toBe(true);
     });
 });

@@ -66,12 +66,12 @@
     },
     "dependencies": {
         "ott-language": "workspace:*",
-        "langium": "~4.2.4",
-        "vscode-languageclient": "~9.0.1",
-        "vscode-languageserver": "~9.0.1"
+        "langium": "~4.3.1",
+        "vscode-languageclient": "~10.0.1",
+        "vscode-languageserver": "~10.0.1"
     },
     "devDependencies": {
-        "@types/node": "~25.9.3",
+        "@types/node": "~26.0.1",
         "@types/vscode": "~1.110.0",
         "concurrently": "~10.0.3",
         "esbuild": "~0.28.1"
