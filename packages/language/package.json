@@ -34,13 +34,13 @@
         "test": "vitest run"
     },
     "dependencies": {
-        "langium": "~4.2.4",
+        "langium": "~4.3.1",
         "ts-pattern": "^5.9.0",
-        "vscode-languageserver": "^9.0.1"
+        "vscode-languageserver": "~10.0.1"
     },
     "devDependencies": {
-        "@types/node": "~25.9.3",
-        "langium-cli": "~4.2.1",
+        "@types/node": "~26.0.1",
+        "langium-cli": "~4.3.0",
         "vitest": "~4.1.8"
     },
     "volta": {
