@@ -20,15 +20,10 @@ const OTT_UNPARSEABLE = new Set([
 
 /**
  * Files that ott parses but our Langium grammar doesn't yet support.
- * Each entry documents the missing feature so we can track progress.
+ * Empty: every parseable file in the corpus now parses without errors
+ * (the mode-sensitive `%` / `>> .. <<` lexing lives in OttTokenBuilder).
  */
-const KNOWN_FAILURES: Record<string, string> = {
-    // syntax.ott exercises Ott's stateful-lexer features that a single-mode
-    // Chevrotain tokenizer can't express: mid-line `%prim` (object text) vs
-    // line-start `%` (comment), and `%d>> ... %d<<` display-conditional blocks.
-    // Closing this needs a custom mode-aware TokenBuilder, tracked separately.
-    'ocaml_light/syntax.ott':     'mid-line %prim / %d>>..<< display blocks (needs mode-aware lexer)',
-};
+const KNOWN_FAILURES: Record<string, string> = {};
 
 let parse: ReturnType<typeof parseHelper<SourceFile>>;
 

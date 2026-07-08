@@ -9,6 +9,7 @@ import { OttValidator, registerValidationChecks } from './ott-validator.js';
 import { OttDocumentSymbolProvider } from './ott-document-symbol-provider.js';
 import { OttFormatter } from './ott-formatter.js';
 import { OttHoverProvider } from './ott-hover-provider.js';
+import { OttTokenBuilder } from './ott-token-builder.js';
 
 /**
  * Declaration of custom services - add your own service classes here.
@@ -33,6 +34,9 @@ export type OttServices = LangiumServices & OttAddedServices
 export const OttModule: Module<OttServices, PartialLangiumServices & OttAddedServices> = {
     validation: {
         OttValidator: () => new OttValidator(),
+    },
+    parser: {
+        TokenBuilder: () => new OttTokenBuilder(),
     },
     lsp: {
         DocumentSymbolProvider: () => new OttDocumentSymbolProvider(),
