@@ -1,3 +1,5 @@
+import { readdirSync, readFileSync, statSync } from "node:fs";
+import { join, relative } from "node:path";
 import { beforeAll, describe, expect, test } from "vitest";
 import { EmptyFileSystem } from "langium";
 import { parseHelper } from "langium/test";
@@ -119,13 +121,13 @@ describe('Metavar formatting', () => {
         expect(result).toContain('::= {{ isa');
     });
 
-    test('multiple homomorphisms wrap to indented lines', async () => {
-        const result = await expectIdempotent(
-            "metavar x ::= {{ isa nat }} {{ coq nat }}",
-        );
-        expect(result).toContain('::=\n');
-        expect(result).toContain('  {{ isa nat }}');
-        expect(result).toContain('  {{ coq nat }}');
+    test('multiple homomorphisms are preserved as written', async () => {
+        // Authors group header homs deliberately; the formatter keeps that layout
+        // instead of forcing one hom per line.
+        const inline = await expectIdempotent("metavar x ::= {{ isa nat }} {{ coq nat }}");
+        expect(inline).toBe("metavar x ::= {{ isa nat }} {{ coq nat }}");
+        const wrapped = await expectIdempotent("metavar x ::=\n {{ isa nat }}\n {{ coq nat }}");
+        expect(wrapped).toBe("metavar x ::=\n {{ isa nat }}\n {{ coq nat }}");
     });
 });
 
@@ -192,14 +194,20 @@ describe('DefnClass formatting', () => {
         await expectValidOtt(result);
     });
 
-    test('rule separators have blank line before them', async () => {
-        const result = await expectIdempotent(
+    test('defn body (inference rules) is preserved verbatim', async () => {
+        // The premise/dashes/conclusion layout and blank-line-between-rules live
+        // only in source whitespace, and object operators like `-->` are
+        // multi-token: the formatter must not reflow or split any of it.
+        const input =
             "defns Jop :: '' ::=\n\n" +
             "defn t --> t' :: :: red :: E_\nby\n\n" +
-            "---- :: R1\nt1 --> t2\n\n" +
-            "---- :: R2\nt3 --> t4",
-        );
-        await expectValidOtt(result);
+            "t1 --> t1'\n---- :: R1\nfix (\\x:T1.t2) --> [x|->t2]\n\n" +
+            "---- :: R2\nt3 --> t4";
+        const result = await expectIdempotent(input);
+        // Premise stays glued to its dashes (no blank line inserted between them),
+        // the multi-token conclusion is intact, and rules stay blank-separated.
+        expect(result).toContain("t1 --> t1'\n---- :: R1\nfix (\\x:T1.t2) --> [x|->t2]");
+        expect(result).toContain("[x|->t2]\n\n---- :: R2");
     });
 });
 
@@ -214,25 +222,34 @@ describe('Homomorphism formatting', () => {
         expect(result).toContain('{{ isa nat }}');
     });
 
-    test('multiple homomorphisms wrap to indented lines', async () => {
-        const result = await expectIdempotent(
-            "metavar x ::= {{ isa nat }} {{ coq nat }} {{ hol num }}",
-        );
-        // Each hom on its own indented line
-        expect(result).toContain('  {{ isa nat }}');
-        expect(result).toContain('  {{ coq nat }}');
-        expect(result).toContain('  {{ hol num }}');
-        await expectValidOtt(result);
+    test('multi-line hom bodies are preserved (not collapsed onto one line)', async () => {
+        // Multi-line target-language homs (embed preambles, coq/isa blocks) must
+        // keep their internal line breaks — the closing `}}` stays on its own line.
+        const input = "embed\n{{ coq\nDefinition foo : Set.\n}}";
+        const result = await expectIdempotent(input);
+        expect(result).toBe(input);
     });
 
-    test('production homs always indented even if single', async () => {
+    test('production homs stay inline (one-line production preserved)', async () => {
+        // Ott productions — especially `terminals` — are hand-aligned one-liners;
+        // the formatter must not push the hom onto its own line.
         const result = await expectIdempotent(
             "grammar\nformula :: formula_ ::=\n  | j INDEXES t1 :: :: Indexesv {{ coq (1 <= j) }}",
         );
-        // Production hom should be on indented line, not inline
-        expect(result).toContain('Indexesv\n');
-        expect(result).toContain('{{ coq (1 <= j) }}');
+        expect(result).toContain('Indexesv {{ coq (1 <= j) }}');
+        expect(result).not.toContain('Indexesv\n');
         await expectValidOtt(result);
+    });
+
+    test('terminals block keeps its column alignment', async () => {
+        // Padding before `::` and the trailing hom must be preserved verbatim.
+        const input =
+            "grammar\nterminals :: terminals_ ::=\n" +
+            "  | -->                        ::   :: longrightarrow {{ tex \\longrightarrow }}\n" +
+            "  | ->                         ::   :: rightarrow     {{ tex \\rightarrow }}";
+        const result = await expectIdempotent(input);
+        expect(result).toContain("  | -->                        ::   :: longrightarrow {{ tex \\longrightarrow }}");
+        expect(result).toContain("  | ->                         ::   :: rightarrow     {{ tex \\rightarrow }}");
     });
 });
 
@@ -347,4 +364,49 @@ describe('Idempotence on complex inputs', () => {
             "}}",
         );
     });
+});
+
+// ── Corpus safety net ────────────────────────────────────
+// The formatter must never break a real Ott file: formatting a valid file must
+// keep it parseable and be idempotent (formatting twice == once). Runs over the
+// whole example corpus copied into fixtures/.
+
+const FIXTURES_DIR = new URL('fixtures', import.meta.url).pathname;
+// Not real Ott (LaTeX modeline / LaTeX-rendered), kept in sync with fixtures.test.ts.
+const NOT_OTT = new Set(['ocaml_light/library.ott', 'tapl/let_alltt.ott']);
+
+function collectOtt(dir: string): string[] {
+    const out: string[] = [];
+    for (const entry of readdirSync(dir)) { // eslint-disable-line security/detect-non-literal-fs-filename
+        const full = join(dir, entry);
+        if (statSync(full).isDirectory()) { // eslint-disable-line security/detect-non-literal-fs-filename
+            out.push(...collectOtt(full));
+        } else if (entry.endsWith('.ott')) {
+            out.push(full);
+        }
+    }
+    return out.sort();
+}
+
+describe('Formatter never breaks a corpus file', () => {
+    for (const filePath of collectOtt(FIXTURES_DIR)) {
+        const name = relative(FIXTURES_DIR, filePath);
+        if (NOT_OTT.has(name)) continue;
+
+        test(`preserves validity + idempotent: ${name}`, async () => {
+            const input = readFileSync(filePath, 'utf-8'); // eslint-disable-line security/detect-non-literal-fs-filename
+            // Only guard files that parse cleanly to begin with.
+            if ((await parse(input)).parseResult.parserErrors.length > 0) return;
+
+            const once = await formatText(input);
+            const reparsed = await parse(once);
+            expect(
+                reparsed.parseResult.parserErrors,
+                `Formatting broke parsing of ${name}`,
+            ).toHaveLength(0);
+
+            const twice = await formatText(once);
+            expect(twice, `Formatting ${name} is not idempotent`).toBe(once);
+        });
+    }
 });
