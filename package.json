@@ -9,6 +9,7 @@
         "watch": "tsc -b tsconfig.build.json --watch",
         "build": "tsc -b tsconfig.build.json && pnpm -r run build",
         "build:clean": "pnpm run clean && pnpm run build",
+        "package": "pnpm --filter vscode-vscode-ott run package",
         "langium:generate": "pnpm --filter ott-language run langium:generate",
         "langium:watch": "pnpm --filter ott-language run langium:watch",
         "test": "pnpm --filter ott-language run test",

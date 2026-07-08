@@ -62,6 +62,7 @@
         "build:prepare": "shx mkdir -p ./syntaxes/ && shx cp -f ../language/syntaxes/ott.tmLanguage.json ./syntaxes/ott.tmLanguage.json && shx cp -f ../../assets/icon.png ./icon.png && shx cp -f ../../LICENSE ./LICENSE",
         "build": "pnpm run build:prepare && tsc -b tsconfig.json && node esbuild.mjs",
         "build:clean": "pnpm run clean && pnpm run build",
+        "package": "pnpm dlx @vscode/vsce package --no-dependencies --out ../..",
         "watch": "pnpm run build:prepare && concurrently -n tsc,esbuild -c blue,yellow \"tsc -b tsconfig.json --watch\" \"node esbuild.mjs --watch\""
     },
     "dependencies": {
