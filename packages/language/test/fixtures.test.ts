@@ -23,13 +23,11 @@ const OTT_UNPARSEABLE = new Set([
  * Each entry documents the missing feature so we can track progress.
  */
 const KNOWN_FAILURES: Record<string, string> = {
-    'ocaml_light/funex.ott':      'funs/fun blocks (function definitions)',
-    'ocaml_light/opsem.ott':      'advanced defn syntax with >> headers',
-    'ocaml_light/reduction.ott':  'rule-level {{ }} hom blocks outside defn',
-    'ocaml_light/syntax.ott':     "'' quoting in homs, comprehensions in bind specs",
-    'ocaml_light/typing.ott':     "'' quoting in homs, advanced features",
-    'peterson_caml.ott':          "'' quoting in homs (isavar/holvar)",
-    'tapl/common_labels.ott':     "'' quoting in homs (isavar/holvar)",
+    // syntax.ott exercises Ott's stateful-lexer features that a single-mode
+    // Chevrotain tokenizer can't express: mid-line `%prim` (object text) vs
+    // line-start `%` (comment), and `%d>> ... %d<<` display-conditional blocks.
+    // Closing this needs a custom mode-aware TokenBuilder, tracked separately.
+    'ocaml_light/syntax.ott':     'mid-line %prim / %d>>..<< display blocks (needs mode-aware lexer)',
 };
 
 let parse: ReturnType<typeof parseHelper<SourceFile>>;
