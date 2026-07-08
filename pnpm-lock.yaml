@@ -100,6 +100,9 @@ importers:
       '@types/node':
         specifier: ~26.1.0
         version: 26.1.0
+      chevrotain:
+        specifier: ~12.0.0
+        version: 12.0.0
       langium-cli:
         specifier: ~4.3.0
         version: 4.3.0

@@ -36,7 +36,7 @@ ProductionElement:
 
 // Productions can contain '|' mid-element (e.g., case ... | ...).
 ProductionStringElement:
-    value=(ID | ELEMENT_STRING | INT | '|' | ',' | '.' | '/' | '<' | '>' | '{' | '}' | 'fun');
+    value=(ID | ELEMENT_STRING | INT | '|' | ',' | '.' | '/' | '<' | '>' | '{' | '}' | 'fun' | '<=');
 
 BindSpec:
     '(+' body+=BindSpecElement+ '+)';
@@ -45,7 +45,7 @@ BindSpecElement:
     Dots | BindSpecToken;
 
 BindSpecToken:
-    value=(ID | ELEMENT_STRING | INT | '|' | ',' | '.' | '/' | '<' | '>' | '{' | '}' | 'fun');
+    value=(ID | ELEMENT_STRING | INT | '|' | ',' | '.' | '/' | '<' | '>' | '{' | '}' | 'fun' | '<=');
 
 // ──────────────────────────────────────
 // Definition classes (inference rules)
@@ -65,7 +65,7 @@ DefnElement:
 
 // Defn elements can also contain '|' and ','.
 DefnStringElement:
-    value=(ID | ELEMENT_STRING | INT | '|' | ',' | '.' | '/' | '<' | '>' | '{' | '}' | 'fun');
+    value=(ID | ELEMENT_STRING | INT | '|' | ',' | '.' | '/' | '<' | '>' | '{' | '}' | 'fun' | '<=');
 
 DefnBodyItem:
     RuleSeparator | DefnComment | DefnBodyElement;
@@ -88,7 +88,7 @@ DefnBodyElement:
 // at the next `fun` clause (see Fundefn); standalone `fun` never appears as
 // object text inside a defn/fundefn body anyway.
 DefnBodyStringElement:
-    value=(ID | ELEMENT_STRING | INT | '|' | ',' | '.' | '/' | '<' | '>' | '{' | '}' | '::' | '{{' | '}}');
+    value=(ID | ELEMENT_STRING | INT | '|' | ',' | '.' | '/' | '<' | '>' | '{' | '}' | '::' | '{{' | '}}' | '<=');
 
 // A rule separator line: dashes, an optional category list, then `:: name`
 // (mirrors Ott's `ident_list COLONCOLON STRING homomorphism_list`).
@@ -126,10 +126,10 @@ ComprehensionElement:
     Dots | ComprehensionStringElement;
 
 ComprehensionStringElement:
-    value=(ID | ELEMENT_STRING | INT | '|' | ',' | '.' | '/' | '<' | '>' | '{' | '}' | 'fun');
+    value=(ID | ELEMENT_STRING | INT | '|' | ',' | '.' | '/' | '<' | '>' | '{' | '}' | 'fun' | '<=');
 
 ComprehensionSep:
-    value=(ID | ELEMENT_STRING | INT | ',' | '|' | '.' | '/' | 'fun');
+    value=(ID | ELEMENT_STRING | INT | ',' | '|' | '.' | '/' | 'fun' | '<=');
 
 // 'IN' is not a keyword — we match it as an ID and check structurally.
 // ComprehensionBound: var (ID upper)? (.. (ID|INT))?
@@ -158,7 +158,7 @@ HomString:
     value=(ID | ELEMENT_STRING | INT | NAMESPACE_PREFIX | ',' | '|' | '.' | '/' | '<' | '>' | '{' | '}' | '::' | '::=' | '</' | '/>' | '//'
         | '(+' | '+)' | '<::'
         | 'by' | 'grammar' | 'metavar' | 'indexvar' | 'defns' | 'defn' | 'embed' | 'subrules'
-        | 'substitutions' | 'freevars' | 'parsing' | 'single' | 'multiple' | 'left' | 'right' | 'nonassoc' | 'prec' | 'com' | 'fun');
+        | 'substitutions' | 'freevars' | 'parsing' | 'single' | 'multiple' | 'left' | 'right' | 'nonassoc' | 'prec' | 'com' | 'fun' | '<=');
 
 HomDots:
     value=DotKind;
@@ -172,7 +172,7 @@ HomInnerElement:
 HomInnerString:
     value=(ID | ELEMENT_STRING | INT | NAMESPACE_PREFIX | ',' | '|' | '.' | '/' | '<' | '>' | '{' | '}'
         | 'by' | 'grammar' | 'metavar' | 'indexvar' | 'defns' | 'defn' | 'embed' | 'subrules'
-        | 'substitutions' | 'freevars' | 'parsing' | 'single' | 'multiple' | 'left' | 'right' | 'nonassoc' | 'prec' | 'com' | 'fun');
+        | 'substitutions' | 'freevars' | 'parsing' | 'single' | 'multiple' | 'left' | 'right' | 'nonassoc' | 'prec' | 'com' | 'fun' | '<=');
 
 HomInnerDots:
     value=DotKind;
@@ -226,8 +226,10 @@ ParsingBlock:
 ParsingDirective:
     nonterminal=ID (('prec' level=INT) | assoc=AssocKind nonterminal2=ID?);
 
+// `<=` is Ott's precedence-ordering directive (`P_tuple <= P_construct`); it
+// shares this production with the associativity keywords.
 AssocKind returns string:
-    'left' | 'right' | 'nonassoc';
+    'left' | 'right' | 'nonassoc' | '<=';
 
 // ──────────────────────────────────────
 // String with homomorphism description
@@ -247,15 +249,14 @@ NamespacePrefix:
 // Terminals (order matters: first declared wins for same-length match)
 // ──────────────────────────────────────
 
-// Ott's `>> ... <<` block comment. Anchored to a line start by consuming the
-// preceding newline + indent before `>>` (Chevrotain forbids `^`; newlines are
-// hidden anyway). This is why it never matches the object-language `<< ... >>`
-// substitution operator, whose `>>` is always mid-line. Declared first so it is
-// tried before NL at a line boundary.
-hidden terminal BLOCK_COMMENT: /\r?\n[ \t]*>>[\s\S]*?<</;
+// COMMENT and BLOCK_COMMENT get context-sensitive custom matchers from
+// OttTokenBuilder (see ott-token-builder.ts). The regex bodies here are only
+// placeholders / fallbacks; declaration order matters, so BLOCK_COMMENT is first
+// (it must win over COMMENT at a `%d>>` opener line).
+hidden terminal BLOCK_COMMENT: />>[\s\S]*?<</;
+hidden terminal COMMENT: /%[^\n\r]*/;
 hidden terminal WS: /[ \t]+/;
 hidden terminal NL: /\r?\n/;
-hidden terminal COMMENT: /%[^\n\r]*/;
 
 terminal DASH_LINE: /----[-]*/;
 // Quoted namespace prefix including quotes: 'ty_', '', 'formula_'
