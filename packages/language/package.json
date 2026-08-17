@@ -42,7 +42,7 @@
         "@types/node": "~26.1.2",
         "langium-cli": "~4.3.0",
         "vitest": "~4.1.10",
-        "chevrotain": "~12.0.0"
+        "chevrotain": "~13.2.0"
     },
     "volta": {
         "node": "22.20.0"
