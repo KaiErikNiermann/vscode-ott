@@ -2,7 +2,7 @@
 
 Language support for the [Ott](https://github.com/ott-lang/ott) specification language in VS Code.
 
-Ott is a tool for writing definitions of programming languages and calculi. It generates LaTeX, Coq, HOL, and Isabelle definitions from a single concise source.
+Ott is a tool for writing definitions of programming languages and calculi. It generates LaTeX, Coq, Lean 4, HOL, Isabelle, Lem, Twelf and OCaml definitions from a single concise source.
 
 ## Features
 
@@ -18,7 +18,7 @@ Ott is a tool for writing definitions of programming languages and calculi. It g
 - `metavar` / `indexvar` declarations
 - `grammar` blocks with productions
 - `defns` / `defn` blocks with inference rules
-- Homomorphisms (`{{ coq ... }}`, `{{ tex ... }}`, etc.)
+- Homomorphisms (`{{ coq ... }}`, `{{ lean ... }}`, `{{ tex ... }}`, etc.)
 - Comprehensions (`</ ... // ... />`)
 - Bind specs (`(+ ... +)`)
 - `embed`, `subrules`, `substitutions`, `freevars`, `parsing` blocks

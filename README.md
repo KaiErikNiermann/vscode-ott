@@ -8,7 +8,7 @@
   Language support for the <a href="https://github.com/ott-lang/ott">Ott</a> specification language in VS Code and Neovim.
 </p>
 
-Ott is a tool for writing definitions of programming languages and calculi, developed by Peter Sewell and collaborators. It generates LaTeX, Coq, HOL, and Isabelle definitions from a single concise source. This project provides IDE tooling to make writing `.ott` files easier.
+Ott is a tool for writing definitions of programming languages and calculi, developed by Peter Sewell and collaborators. It generates LaTeX, Coq, Lean 4, HOL, Isabelle, Lem, Twelf and OCaml definitions from a single concise source. This project provides IDE tooling to make writing `.ott` files easier.
 
 ## Features
 
