@@ -25,6 +25,7 @@ const HOM_DESCRIPTIONS: Record<string, string> = {
     'lean': 'Lean 4 proof assistant — generates Lean definitions',
     'lean-equality': 'Lean equality — emit `deriving DecidableEq` for this type',
     'lean-notation': 'Lean notation — emit a `notation` rather than an `abbrev`',
+    'lean-struct': 'Lean termination — emits `termination_by <measure>` after the generated body',
     'lean-universe': 'Lean universe — the sort (`Type`/`Prop`) for this declaration',
     'lean-lib': 'Lean library block — text collected into the generated preamble',
     'lean-preamble': 'Lean preamble — emitted before the generated definitions',
