@@ -26,7 +26,6 @@ const HOM_DESCRIPTIONS: Record<string, string> = {
     'lean-equality': 'Lean equality — emit `deriving DecidableEq` for this type',
     'lean-notation': 'Lean notation — emit a `notation` rather than an `abbrev`',
     'lean-universe': 'Lean universe — the sort (`Type`/`Prop`) for this declaration',
-    'lean-struct': 'Lean termination — the measure for `termination_by`',
     'lean-lib': 'Lean library block — text collected into the generated preamble',
     'lean-preamble': 'Lean preamble — emitted before the generated definitions',
     'menhir': 'Menhir — parser-generator directive',
