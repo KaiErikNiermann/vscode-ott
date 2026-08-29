@@ -9,6 +9,12 @@ export default defineConfig({
         deps: {
             interopDefault: true
         },
-        include: ['**/*.test.ts']
+        include: ['**/*.test.ts'],
+        // `include` above matches no *.bench.ts, so benchmarks need their own
+        // glob. They live under test/ so tsconfig.test.json type-checks them —
+        // the pre-push hook runs tsc -b, so they must compile.
+        benchmark: {
+            include: ['test/**/*.bench.ts'],
+        }
     }
 });

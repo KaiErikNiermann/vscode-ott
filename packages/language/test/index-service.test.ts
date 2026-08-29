@@ -1,8 +1,12 @@
 import { join } from 'node:path';
 import { beforeAll, describe, expect, test } from 'vitest';
 import { URI, type LangiumDocument } from 'langium';
+import { parseHelper } from 'langium/test';
 import { NodeFileSystem } from 'langium/node';
 import { createOttServices } from 'ott-language';
+import type { SourceFile } from 'ott-language';
+import { buildProjectSymbols, collectFileSymbols } from 'ott-language';
+import { readFileSync } from 'node:fs';
 import { FIXTURES_DIR, collectOttFiles } from './helpers.js';
 
 /**
@@ -96,5 +100,38 @@ describe('the index populates itself from document builds', () => {
         await services.shared.workspace.DocumentBuilder.update([], [l1.uri]);
 
         expect(index.lookup(URI.file(join(dir, 'l2.ott'))).scope.get('store')).toBeUndefined();
+    });
+});
+
+/**
+ * A guard on the shape of the cost, not its absolute value: indexing rides on
+ * parsing, which happens on every edit anyway, so what matters is that it stays
+ * small next to it. A ratio survives a noisy CI runner where a millisecond
+ * threshold would not. Run with OTT_PERF=1; `pnpm bench` prints the detail.
+ */
+describe('indexing cost', () => {
+    test.runIf(process.env.OTT_PERF)('stays a small fraction of parsing', async () => {
+        const files = collectOttFiles(join(FIXTURES_DIR, 'ocaml_light'))
+            .filter(f => !f.endsWith('library.ott'));
+        const sources = files.map(f => ({
+            file: f,
+            text: readFileSync(f, 'utf-8'), // eslint-disable-line security/detect-non-literal-fs-filename
+        }));
+
+        const parse = parseHelper<SourceFile>(services.Ott);
+        const parseStart = performance.now();
+        const roots: Array<{ file: string; root: SourceFile }> = [];
+        for (const { file, text } of sources) {
+            roots.push({ file, root: (await parse(text)).parseResult.value });
+        }
+        const parseMs = performance.now() - parseStart;
+
+        const indexStart = performance.now();
+        buildProjectSymbols(roots.map(r => collectFileSymbols(r.root, r.file)));
+        const indexMs = performance.now() - indexStart;
+
+        expect(indexMs / parseMs,
+            `indexing ${indexMs.toFixed(1)}ms vs parsing ${parseMs.toFixed(1)}ms`,
+        ).toBeLessThan(0.25);
     });
 });
