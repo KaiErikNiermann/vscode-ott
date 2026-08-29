@@ -41,7 +41,11 @@
                 "extensions": [
                     ".ott"
                 ],
-                "configuration": "./language-configuration.json"
+                "configuration": "./language-configuration.json",
+                "icon": {
+                    "light": "./icons/ott-rule-light.svg",
+                    "dark": "./icons/ott-rule-dark.svg"
+                }
             }
         ],
         "grammars": [
@@ -57,9 +61,9 @@
     ],
     "main": "./out/extension/main.cjs",
     "scripts": {
-        "clean": "shx rm -fr *.tsbuildinfo out syntaxes",
+        "clean": "shx rm -fr *.tsbuildinfo out syntaxes icons",
         "vscode:prepublish": "pnpm run build",
-        "build:prepare": "shx mkdir -p ./syntaxes/ && shx cp -f ../language/syntaxes/ott.tmLanguage.json ./syntaxes/ott.tmLanguage.json && shx cp -f ../../assets/icon.png ./icon.png && shx cp -f ../../LICENSE ./LICENSE",
+        "build:prepare": "shx mkdir -p ./syntaxes/ && shx cp -f ../language/syntaxes/ott.tmLanguage.json ./syntaxes/ott.tmLanguage.json && shx cp -f ../../assets/icon.png ./icon.png && shx mkdir -p ./icons/ && shx cp -f ../../assets/file-icons/ott-rule-light.svg ../../assets/file-icons/ott-rule-dark.svg ./icons/ && shx cp -f ../../LICENSE ./LICENSE",
         "build": "pnpm run build:prepare && tsc -b tsconfig.json && node esbuild.mjs",
         "build:clean": "pnpm run clean && pnpm run build",
         "package": "pnpm dlx @vscode/vsce package --no-dependencies --out ../..",
