@@ -4,8 +4,9 @@ entry SourceFile:
     header+=HeaderDecl* items+=Item*;
 
 Item:
-    MetavarDefn | GrammarBlock | EmbedBlock | SubrulesBlock | DefnClass | FunsBlock
-    | SubstitutionsBlock | FreevarsBlock | ParsingBlock | HomsBlock;
+    MetavarDefn | GrammarBlock | EmbedBlock | SubrulesBlock | ContextRulesBlock
+    | DefnClass | FunsBlock | SubstitutionsBlock | FreevarsBlock | ParsingBlock
+    | HomsBlock;
 
 // ──────────────────────────────────────
 // Module header
@@ -227,6 +228,26 @@ SubrulesBlock:
 
 SubruleEntry:
     sub=Name '<::' super=Name homomorphisms+=Homomorphism*;
+
+// ──────────────────────────────────────
+// Context rules
+// ──────────────────────────────────────
+
+// `contextrules <ntr> _:: <target> :: <hole>` — Ott's `contextrule`
+// (`grammar_parser.mly:494-500`). Three plain identifiers; unlike a subrule,
+// upstream attaches no homomorphisms (`raw_cr_homs = []`). The body may be
+// empty, matching `contextrules_body`.
+//
+// `_::` is its own lexer rule upstream (`grammar_lexer.mll:266`), ahead of the
+// identifier rule, so a glued `_::` is the operator and a spaced `_ ::` is an
+// identifier followed by `::`. Langium orders keyword tokens before terminals,
+// which reproduces that; the only `_::` anywhere in the corpus is inside a `%`
+// comment.
+ContextRulesBlock:
+    'contextrules' entries+=ContextRuleEntry*;
+
+ContextRuleEntry:
+    ntr=Name '_::' target=Name '::' hole=Name;
 
 // ──────────────────────────────────────
 // Homs block

@@ -3,6 +3,7 @@ import { EmptyFileSystem, type LangiumDocument } from "langium";
 import { parseHelper } from "langium/test";
 import type { SourceFile } from "ott-language";
 import { createOttServices } from "ott-language";
+import { ottAccepts, resolveOttBinary } from './helpers.js';
 
 // Constructs the grammar used to reject, each one found by parsing the upstream
 // corpus and confirming with the real `ott` binary that the file is valid — so
@@ -120,5 +121,60 @@ describe("homs block", () => {
         if (item.$type !== 'HomsBlock') expect.fail('expected a HomsBlock');
         expect(item.wrapper).toBe("'t_'");
         expect(item.entries.map(e => e.name)).toEqual(['Lam', 'Var']);
+    });
+});
+
+describe('contextrules block', () => {
+    // `CONTEXTRULES contextrules` is a real item (`grammar_parser.mly:150`) that
+    // no corpus file uses, which is why it went unnoticed. The shape is
+    // `ntE _:: nt1 :: nt2` with all three nonterminal roots (`doc/top2.mng`,
+    // "context rule declarations"); `docs/reference/syntax-reference.rst` lists
+    // the keyword but not its form.
+    const CONTEXT_GRAMMAR = [
+        'metavar x ::=',
+        '',
+        'grammar',
+        "t :: 't_' ::=",
+        '  | x :: :: Var',
+        '  | t1 t2 :: :: App',
+        '',
+        "E :: 'E_' ::=",
+        '  | __ t :: :: AppL',
+        '  | t __ :: :: AppR',
+        '',
+        'contextrules',
+        'E _:: t :: t',
+        '',
+    ].join('\n');
+
+    test('a context rule is three roots around `_::` and `::`', async () => {
+        await expectParses(CONTEXT_GRAMMAR);
+    });
+
+    test('ott itself accepts that spec', () => {
+        // Not just "parses": this one clears Ott's hole-linearity check too, so
+        // the form above is a real context declaration rather than a plausible
+        // arrangement of tokens.
+        const ottPath = resolveOttBinary();
+        if (ottPath === null) return;
+        expect(ottAccepts(ottPath, CONTEXT_GRAMMAR, 'contextrules')).toBe(true);
+    });
+
+    test('several rules may follow one keyword', async () => {
+        const doc = await expectParses('contextrules\nE _:: t :: t\nE _:: v :: v\n');
+        const block = doc.parseResult.value.items[0];
+        expect(block.$type).toBe('ContextRulesBlock');
+        expect((block as { entries: unknown[] }).entries).toHaveLength(2);
+    });
+
+    test('the body may be empty, as in `contextrules_body`', async () => {
+        await expectParses('contextrules\n\nmetavar x ::=\n');
+    });
+
+    test("`_::` only binds when it is glued, as in Ott's own lexer", async () => {
+        // `grammar_lexer.mll:266` puts `"_::"` ahead of the identifier rule, so
+        // a spaced `_ ::` stays an identifier followed by `::` — which is what
+        // lets a production be named `_`.
+        await expectParses("grammar\nt :: 't_' ::=\n  | _ :: :: hole\n");
     });
 });

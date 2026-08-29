@@ -48,12 +48,20 @@
       "match": "%.*$"
     },
     "keyword-block": {
-      "name": "keyword.control.block.ott",
-      "match": "\\b(grammar|defns|defn|embed|subrules|substitutions|freevars|parsing)\\b"
+      "match": "^\\s*(grammar|defns|defn|funs|fun|embed|homs|subrules|contextrules|substitutions|freevars|parsing|begincoqsection|endcoqsection|coqvariable)\\b",
+      "captures": {
+        "1": {
+          "name": "keyword.control.block.ott"
+        }
+      }
     },
     "keyword-decl": {
-      "name": "keyword.declaration.ott",
-      "match": "\\b(metavar|indexvar)\\b"
+      "match": "^\\s*(metavar|indexvar)\\b",
+      "captures": {
+        "1": {
+          "name": "keyword.declaration.ott"
+        }
+      }
     },
     "keyword-control": {
       "name": "keyword.control.ott",

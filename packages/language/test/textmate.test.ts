@@ -59,3 +59,42 @@ describe('module header', () => {
         expect(header.end).toBe('$');
     });
 });
+
+describe('item keywords', () => {
+    const block = new RegExp(grammar.repository['keyword-block'].match as string);
+    const decl = new RegExp(grammar.repository['keyword-decl'].match as string);
+
+    test('cover every item Ott has', () => {
+        // From `item:` in `grammar_parser.mly:143-161`. Missing entries are
+        // invisible -- the word simply stays uncoloured next to its neighbours,
+        // which is how `contextrules`, `funs`, `fun` and `homs` went unnoticed.
+        for (const keyword of ['grammar', 'defns', 'defn', 'funs', 'fun', 'embed', 'homs',
+            'subrules', 'contextrules', 'substitutions', 'freevars', 'parsing',
+            'begincoqsection', 'endcoqsection', 'coqvariable']) {
+            expect(block.test(keyword), keyword).toBe(true);
+        }
+        for (const keyword of ['metavar', 'indexvar']) {
+            expect(decl.test(keyword), keyword).toBe(true);
+        }
+    });
+
+    test('only match as the first word of a line', () => {
+        // Ott decides an item keyword by the first word of a line
+        // (`grammar_lexer.mll:436-460`), so these are object-language text.
+        for (const line of ['  | fun x -> e :: :: fun', '  | e1 e2 :: :: grammar',
+            'G |- embed : T', '  | t as T :: :: ascribe']) {
+            expect(block.test(line), line).toBe(false);
+        }
+        expect(decl.test('  | metavar x :: :: mv'), 'metavar mid-line').toBe(false);
+    });
+
+    test('still match when the line is indented', () => {
+        expect(block.test('  defn')).toBe(true);
+    });
+
+    test('`terminals` is not among them', () => {
+        // It is an ordinary grammar rule whose name happens to be `terminals`,
+        // despite what `docs/reference/syntax-reference.rst` says.
+        expect(block.test('terminals :: \'terminals_\' ::=')).toBe(false);
+    });
+});

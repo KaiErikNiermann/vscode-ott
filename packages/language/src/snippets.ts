@@ -9,10 +9,6 @@
  * `Insert Snippet` command; the benefit is that `defns` is never offered in the
  * middle of an inference rule.
  *
- * `contextrules` has no scaffold on purpose: `ott.langium` has no rule for it
- * yet, so offering one would hand the user a parse error from a completion we
- * suggested.
- *
  * Each body is written the way Ott actually wants it — the blank line after
  * `by` that `semiraw_rule_list` requires before every rule, the four fields of
  * a `defn` header, the two `::` of a production — because the layout is exactly
@@ -110,6 +106,13 @@ export const SNIPPETS: readonly Snippet[] = [
     {
         prefix: 'parsing', detail: 'resolve an ambiguity by production priority',
         body: ['parsing', '  ${1:t_app} <= ${2:t_abs}'], contexts: ['item'],
+    },
+    {
+        prefix: 'contextrules', detail: 'declare an evaluation-context rule',
+        // `ntE _:: nt1 :: nt2`, all three nonterminal roots (`doc/top2.mng`
+        // §"context rule declarations"): contexts ntE for the nt1 grammar, with
+        // holes in nt2 positions. `__` marks the hole in ntE's own productions.
+        body: ['contextrules', '  ${1:E} _:: ${2:t} :: ${3:t}'], contexts: ['item'],
     },
     {
         prefix: 'embed', detail: 'pass text straight through to a backend',
