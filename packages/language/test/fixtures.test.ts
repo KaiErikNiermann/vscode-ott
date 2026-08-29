@@ -1,4 +1,3 @@
-import { execFileSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
 import { relative } from 'node:path';
 import { beforeAll, describe, expect, test } from 'vitest';
@@ -6,7 +5,9 @@ import { EmptyFileSystem, type LangiumDocument } from 'langium';
 import { parseHelper } from 'langium/test';
 import type { SourceFile } from 'ott-language';
 import { createOttServices, isSourceFile } from 'ott-language';
-import { FIXTURES_DIR, OTT_REJECTS, OTT_UNPARSEABLE, collectOttFiles, resolveOttBinary } from './helpers.js';
+import {
+    FIXTURES_DIR, OTT_REJECTS, OTT_UNPARSEABLE, collectOttFiles, ottAccepts, resolveOttBinary,
+} from './helpers.js';
 
 /**
  * Files that ott parses but our Langium grammar doesn't yet support.
@@ -23,24 +24,6 @@ beforeAll(async () => {
     const services = createOttServices(EmptyFileSystem);
     parse = parseHelper<SourceFile>(services.Ott);
 });
-
-/** Check if the real `ott` tool can parse a file (ignoring semantic errors). */
-function ottCanParse(ottBin: string, filePath: string): boolean {
-    try {
-        // eslint-disable-next-line sonarjs/publicly-writable-directories
-        execFileSync(ottBin, ['-i', filePath, '-o', '/tmp/ott_fixture_out.tex'], {
-            encoding: 'utf-8',
-            stdio: ['pipe', 'pipe', 'pipe'],
-            timeout: 30_000,
-        });
-        return true;
-    } catch (error: unknown) {
-        const stderr = (error as { stderr?: string }).stderr ?? '';
-        // Semantic errors (post-parse) are OK — we only care about lex/parse failures
-        const isLexParseError = /Lexing error|parse error|Syntax error/i.test(stderr);
-        return !isLexParseError;
-    }
-}
 
 const fixtureFiles = collectOttFiles(FIXTURES_DIR);
 
@@ -100,7 +83,7 @@ describe('Cross-validation: Langium agrees with ott', () => {
         if (OTT_UNPARSEABLE.has(name) || OTT_REJECTS.has(name) || name in KNOWN_FAILURES) continue;
 
         test.runIf(ottPath !== null)(`ott also parses: ${name}`, () => {
-            expect(ottCanParse(ottPath as string, filePath)).toBe(true);
+            expect(ottAccepts(ottPath as string, readFileSync(filePath, 'utf-8'), name)).toBe(true);
         });
     }
 });

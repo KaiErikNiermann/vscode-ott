@@ -1,5 +1,6 @@
 import { execFileSync } from 'node:child_process';
-import { existsSync, readdirSync, statSync } from 'node:fs';
+import { existsSync, mkdtempSync, readdirSync, rmSync, statSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
 /** The corpus copied from the upstream Ott distribution. */
@@ -65,5 +66,32 @@ export function resolveOttBinary(): string | null {
         return execFileSync('which', ['ott'], { encoding: 'utf-8' }).trim() || null;
     } catch {
         return null;
+    }
+}
+
+/**
+ * Whether the real `ott` accepts a file, ignoring semantic errors.
+ *
+ * Only lex/parse failures count: `-i` also runs typechecking, and a fixture may
+ * legitimately fail that (an undefined nonterminal, say) while still being
+ * syntactically the thing we claim to parse.
+ *
+ * Takes the source text rather than a path so a *transformed* file — the output
+ * of the formatter, say — can be checked without writing it back over a fixture.
+ */
+export function ottAccepts(ottBin: string, text: string, label: string): boolean {
+    const dir = mkdtempSync(join(tmpdir(), 'ott-check-'));
+    const file = join(dir, `${label.replace(/[^\w.-]/g, '_')}.ott`);
+    try {
+        writeFileSync(file, text); // eslint-disable-line security/detect-non-literal-fs-filename
+        execFileSync(ottBin, ['-i', file, '-o', join(dir, 'out.tex')], {
+            encoding: 'utf-8', stdio: ['pipe', 'pipe', 'pipe'], timeout: 30_000,
+        });
+        return true;
+    } catch (error: unknown) {
+        const stderr = (error as { stderr?: string }).stderr ?? '';
+        return !/Lexing error|parse error|Syntax error/i.test(stderr);
+    } finally {
+        rmSync(dir, { recursive: true, force: true }); // eslint-disable-line security/detect-non-literal-fs-filename
     }
 }
