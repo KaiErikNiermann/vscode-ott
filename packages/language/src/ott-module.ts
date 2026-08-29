@@ -13,6 +13,7 @@ import { OttTokenBuilder } from './ott-token-builder.js';
 import { OttSymbolIndex } from './symbols/index-service.js';
 import { OttSemanticTokenProvider } from './ott-semantic-token-provider.js';
 import { OttDefinitionProvider, OttReferencesProvider } from './ott-navigation.js';
+import { OttCompletionProvider } from './ott-completion-provider.js';
 
 /**
  * Declaration of custom services - add your own service classes here.
@@ -59,6 +60,7 @@ export const OttModule: Module<OttServices, PartialLangiumServices & OttAddedSer
         SemanticTokenProvider: services => new OttSemanticTokenProvider(services),
         DefinitionProvider: services => new OttDefinitionProvider(services),
         ReferencesProvider: services => new OttReferencesProvider(services),
+        CompletionProvider: services => new OttCompletionProvider(services),
     },
 };
 

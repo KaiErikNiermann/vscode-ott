@@ -160,3 +160,55 @@ describe('hover', () => {
         expect(JSON.stringify(hover?.contents ?? '')).toContain('metavar');
     });
 });
+
+describe('completion', () => {
+    /** Completion items at the position just after `needle`. */
+    async function completeAfter(document: LangiumDocument, needle: string, nth = 0) {
+        const text = document.textDocument.getText();
+        let index = -1;
+        for (let i = 0; i <= nth; i++) index = text.indexOf(needle, index + 1);
+        expect(index, `"${needle}" #${nth} not found`).toBeGreaterThanOrEqual(0);
+        const list = await services.Ott.lsp.CompletionProvider!.getCompletion(document, {
+            textDocument: { uri: uriOf(document) },
+            position: document.textDocument.positionAt(index + needle.length),
+        });
+        return list?.items ?? [];
+    }
+
+    test('offers the roots in scope inside a rule body', async () => {
+        const dir = join(FIXTURES_DIR, 'stlc_lean');
+        const documents = await loadDir(dir);
+        const doc = documents.find(d => d.uri.fsPath.endsWith('stlc_lean.ott'));
+        if (!doc) expect.fail('stlc_lean.ott not loaded');
+
+        const items = await completeAfter(doc, 'G |- e1 e2 : ');
+        const labels = items.map(i => i.label);
+        // The nonterminals and metavariables this file declares.
+        expect(labels).toContain('T');
+        expect(labels).toContain('e');
+        expect(labels).toContain('x');
+        // And the terminals, including ones no `terminals` block declares.
+        expect(labels).toContain('bool');
+    });
+
+    test('offers roots declared in a sibling file', async () => {
+        const dir = join(FIXTURES_DIR, 'ocaml_light');
+        const documents = await loadDir(dir);
+        const typing = documents.find(d => d.uri.fsPath.endsWith('typing.ott'));
+        if (!typing) expect.fail('typing.ott not loaded');
+
+        const items = await completeAfter(typing, 'expr', 40);
+        // `expr` is declared in syntax.ott; a single-file completion could not
+        // offer it here at all.
+        expect(items.map(i => i.label)).toContain('expr');
+    });
+
+    test('adds nothing outside object-language text', async () => {
+        const dir = join(FIXTURES_DIR, 'stlc_lean');
+        const documents = await loadDir(dir);
+        const doc = documents[0];
+        const items = await completeAfter(doc, '%% METAVARIABLES');
+        // Only Ott's own grammar-driven items, if any — no roots.
+        expect(items.some(i => i.detail === 'nonterminal')).toBe(false);
+    });
+});
