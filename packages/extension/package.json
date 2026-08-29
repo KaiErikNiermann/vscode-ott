@@ -70,6 +70,48 @@
                     },
                     "default": [],
                     "markdownDescription": "Feature names from `Ott.toml` to append to the resolved source list, as `ott build --features` would."
+                },
+                "ott.format.rules.bar": {
+                    "type": "string",
+                    "enum": [
+                        "off",
+                        "fit"
+                    ],
+                    "enumDescriptions": [
+                        "Leave the dashed line of an inference rule exactly as written.",
+                        "Fit the dashed line to the rule's widest line — the longer of the premises and the conclusion, never the shorter."
+                    ],
+                    "default": "off",
+                    "markdownDescription": "Whether `Format Document` resizes the dashed line of an inference rule. Ott never reads the bar's length, so this is purely cosmetic — but most existing specs were laid out by hand, so it is off by default."
+                },
+                "ott.format.rules.alignment": {
+                    "type": "string",
+                    "enum": [
+                        "off",
+                        "left",
+                        "center",
+                        "auto"
+                    ],
+                    "enumDescriptions": [
+                        "Leave the indentation of inference rules alone.",
+                        "Flush every line of a rule to the block's own left margin.",
+                        "Centre the premises and conclusion over the bar.",
+                        "Centre a rule with at most one premise; flush left once premises are stacked."
+                    ],
+                    "default": "off",
+                    "markdownDescription": "How `Format Document` indents the lines of an inference rule. `auto` follows the usual typesetting convention: centred for a single premise, left-flush for stacked ones."
+                },
+                "ott.format.rules.barPadding": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "default": 0,
+                    "markdownDescription": "Extra dashes beyond the rule's widest line, when `#ott.format.rules.bar#` is `fit`."
+                },
+                "ott.format.rules.maxBarWidth": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "default": 100,
+                    "markdownDescription": "Upper bound on a fitted bar, or `0` for none. A handful of real rules run past 150 columns, where an exactly-fitted bar stops helping."
                 }
             }
         },

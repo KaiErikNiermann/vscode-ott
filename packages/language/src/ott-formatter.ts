@@ -1,7 +1,14 @@
-import type { AstNode } from 'langium';
-import type { NodeFormatter } from 'langium/lsp';
+import type { AstNode, LangiumDocument } from 'langium';
+import type { LangiumServices, NodeFormatter } from 'langium/lsp';
 import { AbstractFormatter, Formatting } from 'langium/lsp';
+import type {
+    DocumentFormattingParams, DocumentRangeFormattingParams, FormattingOptions,
+    Range, TextEdit,
+} from 'vscode-languageserver';
 import { match } from 'ts-pattern';
+import type { RuleFormatSettings } from './format/settings.js';
+import { DEFAULT_RULE_SETTINGS, isNoOp, readRuleSettings } from './format/settings.js';
+import { collectRuleBodies, ruleReplacements } from './format/rules.js';
 import type {
     Defn, DefnClass, ExtendsDecl, FreevarsBlock, GrammarRule, Homomorphism,
     ImportsDecl, MetavarDefn, ModuleDecl, ParsingBlock, Production,
@@ -24,8 +31,118 @@ import type {
  * column alignment, defn bodies (the inference rules), homomorphism bodies
  * (multi-line target-language code), comprehensions and bind specs. Langium
  * only edits whitespace we emit an instruction for, so "emit nothing" == "keep".
+ *
+ * Inference-rule layout is the one exception, and it is opt-in: with
+ * `ott.format.rules.*` at its defaults this formatter produces byte-identical
+ * output to the structure-only behaviour above. Switched on, a second pass
+ * (`format/rules.ts`) fits each dashed bar to the rule's widest line and
+ * optionally indents it. That pass cannot use the Langium formatting API at all
+ * — rewriting a token's text is not something `NodeFormatter` can express, and
+ * the body is a flat token soup with newlines hidden — so it works on raw text
+ * offsets and its edits are merged in below.
  */
 export class OttFormatter extends AbstractFormatter {
+
+    /** Set before `doDocumentFormat` runs; see `formatDocument`. */
+    private settings: RuleFormatSettings = DEFAULT_RULE_SETTINGS;
+    private cached?: RuleFormatSettings;
+    private listening = false;
+
+    /** Absent in a bare service container; rule formatting then stays at its
+     *  defaults, which is "do nothing". */
+    constructor(private readonly services?: LangiumServices) {
+        super();
+    }
+
+    /**
+     * Rule layout is configured through `workspace/configuration`, which is
+     * async, while `format` and `doDocumentFormat` are not. The three LSP entry
+     * points are the only async seam, so the fetch happens here and the result
+     * is handed down in a field.
+     */
+    override async formatDocument(
+        document: LangiumDocument, params: DocumentFormattingParams,
+    ): Promise<TextEdit[]> {
+        this.settings = await this.loadSettings();
+        return super.formatDocument(document, params);
+    }
+
+    override async formatDocumentRange(
+        document: LangiumDocument, params: DocumentRangeFormattingParams,
+    ): Promise<TextEdit[]> {
+        this.settings = await this.loadSettings();
+        return super.formatDocumentRange(document, params);
+    }
+
+    private async loadSettings(): Promise<RuleFormatSettings> {
+        const configuration = this.services?.shared.workspace.ConfigurationProvider;
+        if (!configuration) return DEFAULT_RULE_SETTINGS;
+        if (this.cached) return this.cached;
+        if (!this.listening) {
+            this.listening = true;
+            configuration.onConfigurationSectionUpdate(() => { this.cached = undefined; });
+        }
+        try {
+            this.cached = readRuleSettings(await configuration.getConfiguration('ott', 'format'));
+        } catch (error) {
+            // A client that never answers `workspace/configuration` must not
+            // leave the document unformattable.
+            console.error('[ott] could not read format settings, using defaults:', error);
+            this.cached = DEFAULT_RULE_SETTINGS;
+        }
+        return this.cached;
+    }
+
+    /**
+     * Structural formatting, then inference-rule layout on top.
+     *
+     * Overriding here rather than in `formatDocument` covers range formatting
+     * too. `avoidOverlappingEdits` compares each edit only against the last one
+     * it accepted, so the merged list has to be in ascending document order —
+     * hence the sort. The two sets should not overlap in any case: the
+     * structural pass emits nothing between `by` and a body's last token, and
+     * the rule pass emits nothing outside that span.
+     */
+    protected override doDocumentFormat(
+        document: LangiumDocument, options: FormattingOptions, range?: Range,
+    ): TextEdit[] {
+        const structural = super.doDocumentFormat(document, options, range);
+        if (isNoOp(this.settings)) return structural;
+
+        let rules: TextEdit[];
+        try {
+            rules = this.ruleEdits(document, range);
+        } catch (error) {
+            console.error('[ott] inference-rule formatting failed, skipping:', error);
+            return structural;
+        }
+        if (rules.length === 0) return structural;
+
+        return this.avoidOverlappingEdits(
+            document.textDocument,
+            [...structural, ...rules].sort((a, b) =>
+                document.textDocument.offsetAt(a.range.start)
+                - document.textDocument.offsetAt(b.range.start)),
+        );
+    }
+
+    private ruleEdits(document: LangiumDocument, range?: Range): TextEdit[] {
+        const text = document.textDocument.getText();
+        const bodies = collectRuleBodies(document.parseResult.value);
+        const limit = range === undefined ? undefined : {
+            start: document.textDocument.offsetAt(range.start),
+            end: document.textDocument.offsetAt(range.end),
+        };
+        return ruleReplacements(text, bodies, this.settings)
+            .filter(r => limit === undefined || (r.start >= limit.start && r.end <= limit.end))
+            .map(r => ({
+                range: {
+                    start: document.textDocument.positionAt(r.start),
+                    end: document.textDocument.positionAt(r.end),
+                },
+                newText: r.text,
+            }));
+    }
 
     protected format(node: AstNode): void {
         // Formatting walks a possibly error-recovered AST. A throw here would

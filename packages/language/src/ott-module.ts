@@ -55,7 +55,7 @@ export const OttModule: Module<OttServices, PartialLangiumServices & OttAddedSer
     },
     lsp: {
         DocumentSymbolProvider: () => new OttDocumentSymbolProvider(),
-        Formatter: () => new OttFormatter(),
+        Formatter: services => new OttFormatter(services),
         HoverProvider: services => new OttHoverProvider(services),
         SemanticTokenProvider: services => new OttSemanticTokenProvider(services),
         DefinitionProvider: services => new OttDefinitionProvider(services),
