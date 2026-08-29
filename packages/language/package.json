@@ -35,14 +35,15 @@
     },
     "dependencies": {
         "langium": "~4.3.1",
+        "smol-toml": "^1.8.0",
         "ts-pattern": "^5.9.0",
         "vscode-languageserver": "~10.0.1"
     },
     "devDependencies": {
         "@types/node": "~26.4.1",
+        "chevrotain": "~13.2.0",
         "langium-cli": "~4.3.0",
-        "vitest": "~5.0.0",
-        "chevrotain": "~13.2.0"
+        "vitest": "~5.0.0"
     },
     "volta": {
         "node": "22.20.0"

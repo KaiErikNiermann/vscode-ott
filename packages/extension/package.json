@@ -54,10 +54,29 @@
                 "scopeName": "source.ott",
                 "path": "syntaxes/ott.tmLanguage.json"
             }
-        ]
+        ],
+        "configuration": {
+            "title": "Ott",
+            "properties": {
+                "ott.project.profile": {
+                    "type": "string",
+                    "default": "",
+                    "markdownDescription": "Which `Ott.toml` profile to resolve symbols against. Empty uses the default `[spec] files` list. A file that the active profile does not include falls back to the union of every source set that does contain it, so it is never left without cross-file symbols."
+                },
+                "ott.project.features": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "default": [],
+                    "markdownDescription": "Feature names from `Ott.toml` to append to the resolved source list, as `ott build --features` would."
+                }
+            }
+        }
     },
     "activationEvents": [
-        "onLanguage:ott"
+        "onLanguage:ott",
+        "workspaceContains:**/*.ott"
     ],
     "main": "./out/extension/main.cjs",
     "scripts": {
