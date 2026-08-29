@@ -1,6 +1,7 @@
-import { AstUtils, CstUtils, GrammarAST } from 'langium';
+import { AstUtils } from 'langium';
 import type { AstNode } from 'langium';
 import type { Defn, Fundefn } from '../generated/ast.js';
+import { defnBodyStart } from '../symbols/spans.js';
 import type { Alignment, RuleFormatSettings } from './settings.js';
 
 /**
@@ -263,17 +264,6 @@ export function ruleReplacements(
     return out;
 }
 
-/** The offset just past a defn's `by`, which is where its body begins. */
-function bodyStart(defn: Defn | Fundefn): number | undefined {
-    const cst = defn.$cstNode;
-    if (!cst) return undefined;
-    for (const leaf of CstUtils.flattenCst(cst)) {
-        const source = leaf.grammarSource;
-        if (source && GrammarAST.isKeyword(source) && source.value === 'by') return leaf.end;
-    }
-    return undefined;
-}
-
 /** Every defn and fundefn body in a parsed document, with its rule bars. */
 export function collectRuleBodies(root: AstNode): RuleBody[] {
     const bodies: RuleBody[] = [];
@@ -282,7 +272,7 @@ export function collectRuleBodies(root: AstNode): RuleBody[] {
         const defn = node as Defn | Fundefn;
         const items = defn.body ?? [];
         const last = items.length > 0 ? items[items.length - 1].$cstNode : undefined;
-        const start = bodyStart(defn);
+        const start = defnBodyStart(defn);
         if (start === undefined || !last) continue;
 
         const barOffsets = items

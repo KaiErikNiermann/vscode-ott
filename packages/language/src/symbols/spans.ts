@@ -1,5 +1,5 @@
 import type { AstNode } from 'langium';
-import { AstUtils } from 'langium';
+import { AstUtils, CstUtils, GrammarAST } from 'langium';
 import type { Defn, Fundefn, GrammarRule, Production } from '../generated/ast.js';
 
 /**
@@ -101,6 +101,24 @@ export function spanAt(node: AstNode, offset: number): Span | undefined {
         for (const span of spansOfNode(current)) {
             if (offset >= span.offset && offset < span.end) return span;
         }
+    }
+    return undefined;
+}
+
+/**
+ * The offset just past a defn's `by`, which is where its body begins.
+ *
+ * The grammar puts a defn's header and its rules in one flat node, so "am I in
+ * the header or in the body" is not a question the AST answers — only the `by`
+ * separates them. Shared by rule formatting and by the completion provider,
+ * which must not offer an inference rule where a judgement form goes.
+ */
+export function defnBodyStart(defn: Defn | Fundefn): number | undefined {
+    const cst = defn.$cstNode;
+    if (!cst) return undefined;
+    for (const leaf of CstUtils.flattenCst(cst)) {
+        const source = leaf.grammarSource;
+        if (source && GrammarAST.isKeyword(source) && source.value === 'by') return leaf.end;
     }
     return undefined;
 }

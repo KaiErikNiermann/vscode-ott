@@ -2,11 +2,14 @@ import { CstUtils, type LangiumDocument } from 'langium';
 import type { LangiumServices } from 'langium/lsp';
 import { DefaultCompletionProvider } from 'langium/lsp';
 import {
-    CompletionItemKind, CompletionList, type CompletionItem, type CompletionParams,
+    CompletionItemKind, CompletionList, InsertTextFormat,
+    type CompletionItem, type CompletionParams,
 } from 'vscode-languageserver';
 import type { SymbolEntry } from './symbols/project.js';
 import type { OttSymbolIndex } from './symbols/index-service.js';
 import { spanAt } from './symbols/spans.js';
+import { SNIPPETS } from './snippets.js';
+import { snippetContexts } from './snippet-context.js';
 
 /**
  * Completion for object-language identifiers inside rules and productions.
@@ -29,6 +32,11 @@ import { spanAt } from './symbols/spans.js';
  *
  * Ott's own syntax still completes through Langium's grammar-driven default;
  * this only adds items where the cursor is in object-language text.
+ *
+ * On top of both, scaffolds for Ott's constructs (`snippets.ts`), gated on
+ * where the cursor is. They are served from here rather than contributed as VS
+ * Code snippets precisely so they *can* be gated: contributed snippets are
+ * merged into the completion list client-side, after the server has replied.
  */
 
 type ServicesWithIndex = LangiumServices & { symbols: { SymbolIndex: OttSymbolIndex } };
@@ -59,16 +67,17 @@ export class OttCompletionProvider extends DefaultCompletionProvider {
         document: LangiumDocument, params: CompletionParams,
     ): Promise<CompletionList | undefined> {
         const base = await super.getCompletion(document, params);
-        let object: CompletionItem[] = [];
+        const extra: CompletionItem[] = [];
         try {
-            object = this.objectLanguageItems(document, params);
+            extra.push(...this.objectLanguageItems(document, params));
+            extra.push(...this.scaffolds(document, params));
         } catch (error) {
             // Never let this fail the request; the grammar-driven items below
             // are still useful on their own.
             console.error('[ott] completion failed on a partial AST:', error);
         }
-        if (object.length === 0) return base;
-        return CompletionList.create([...(base?.items ?? []), ...object], true);
+        if (extra.length === 0) return base;
+        return CompletionList.create([...(base?.items ?? []), ...extra], true);
     }
 
     /**
@@ -88,6 +97,25 @@ export class OttCompletionProvider extends DefaultCompletionProvider {
             if (span) return span;
         }
         return undefined;
+    }
+
+    /** Scaffolds legal where the cursor is. Sorted ahead of the identifier
+     *  items, since a scaffold is what someone typing `defns` is after. */
+    private scaffolds(
+        document: LangiumDocument, params: CompletionParams,
+    ): CompletionItem[] {
+        const offset = document.textDocument.offsetAt(params.position);
+        const contexts = snippetContexts(document, offset);
+        return SNIPPETS
+            .filter(snippet => snippet.contexts.some(context => contexts.has(context)))
+            .map(snippet => ({
+                label: snippet.prefix,
+                kind: CompletionItemKind.Snippet,
+                detail: snippet.detail,
+                insertText: snippet.body.join('\n'),
+                insertTextFormat: InsertTextFormat.Snippet,
+                sortText: `0_${snippet.prefix}`,
+            }));
     }
 
     /** Roots and terminals visible where the cursor is, or none if it is not in
