@@ -84,6 +84,7 @@ describe('LSP providers never throw on real fixtures (incl. partial parses)', ()
             const symbols = services.Ott.lsp.DocumentSymbolProvider!;
             const hover = services.Ott.lsp.HoverProvider!;
             const formatter = services.Ott.lsp.Formatter!;
+            const semanticTokens = services.Ott.lsp.SemanticTokenProvider!;
 
             await expect(
                 Promise.resolve(symbols.getSymbols(doc, { textDocument: { uri: docUri(doc) } })),
@@ -93,6 +94,15 @@ describe('LSP providers never throw on real fixtures (incl. partial parses)', ()
                 Promise.resolve(formatter.formatDocument(doc, {
                     textDocument: { uri: docUri(doc) },
                     options: { tabSize: 2, insertSpaces: true },
+                })),
+            ).resolves.not.toThrow();
+
+            // Semantic highlighting re-scans object-language spans against the
+            // symbol index; on a partial AST those spans can be missing or
+            // inverted, and a throw would blank the whole file's colouring.
+            await expect(
+                Promise.resolve(semanticTokens.semanticHighlight(doc, {
+                    textDocument: { uri: docUri(doc) },
                 })),
             ).resolves.not.toThrow();
 

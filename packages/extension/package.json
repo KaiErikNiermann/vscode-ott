@@ -72,7 +72,36 @@
                     "markdownDescription": "Feature names from `Ott.toml` to append to the resolved source list, as `ott build --features` would."
                 }
             }
-        }
+        },
+        "semanticTokenScopes": [
+            {
+                "language": "ott",
+                "scopes": {
+                    "type": [
+                        "entity.name.type.ott",
+                        "support.type.ott"
+                    ],
+                    "variable": [
+                        "variable.other.ott"
+                    ],
+                    "parameter": [
+                        "variable.parameter.ott"
+                    ],
+                    "keyword": [
+                        "keyword.other.terminal.ott"
+                    ],
+                    "operator": [
+                        "keyword.operator.ott"
+                    ],
+                    "function": [
+                        "entity.name.function.ott"
+                    ],
+                    "decorator": [
+                        "entity.name.tag.ott"
+                    ]
+                }
+            }
+        ]
     },
     "activationEvents": [
         "onLanguage:ott",
