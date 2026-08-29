@@ -1,5 +1,5 @@
-import type { AstNode, CstNode, LangiumDocument, MaybePromise } from 'langium';
-import { CstUtils } from 'langium';
+import type { AstNode, CstNode, LangiumDocument } from 'langium';
+import { AstUtils, CstUtils, GrammarAST } from 'langium';
 import type { HoverProvider } from 'langium/lsp';
 import type { Hover, HoverParams } from 'vscode-languageserver';
 import { match } from 'ts-pattern';
@@ -11,6 +11,8 @@ import type {
 import { basename } from 'node:path';
 import type { OttSymbolIndex } from './symbols/index-service.js';
 import { locateSymbol } from './symbols/locate.js';
+import type { KeywordDoc } from './keyword-docs.js';
+import { KEYWORD_DOCS, TERMINALS_DOC, renderKeywordDoc } from './keyword-docs.js';
 
 /** Known homomorphism target descriptions. */
 const HOM_DESCRIPTIONS: Record<string, string> = {
@@ -46,19 +48,51 @@ function markdown(lines: readonly string[]): Hover {
     return { contents: { kind: 'markdown', value: lines.join('\n') } };
 }
 
+/** The `docs/` tree these hovers link into when nothing is configured. */
+const DEFAULT_DOCS_BASE = 'https://github.com/KaiErikNiermann/ott/blob/new-docs/docs';
+
+interface HoverServices {
+    readonly symbols?: { SymbolIndex?: OttSymbolIndex };
+    readonly shared?: { workspace?: { ConfigurationProvider?: {
+        getConfiguration(language: string, configuration: string): Promise<unknown>;
+    } } };
+}
+
 export class OttHoverProvider implements HoverProvider {
     /** Absent in a bare service container; hover then keeps its old behaviour. */
     private readonly index?: OttSymbolIndex;
+    private readonly services?: HoverServices;
+    private cachedBase?: string;
 
-    constructor(services?: { symbols?: { SymbolIndex?: OttSymbolIndex } }) {
+    constructor(services?: HoverServices) {
+        this.services = services;
         this.index = services?.symbols?.SymbolIndex;
     }
 
+    /**
+     * Where "learn more" points. The Ott documentation has no published site,
+     * so the default is the `docs/` tree on GitHub and `ott.docs.baseUrl` exists
+     * to repoint it — including at the empty string, which drops the links.
+     */
+    private async docsBase(): Promise<string> {
+        if (this.cachedBase !== undefined) return this.cachedBase;
+        const configuration = this.services?.shared?.workspace?.ConfigurationProvider;
+        let base = DEFAULT_DOCS_BASE;
+        try {
+            const docs = await configuration?.getConfiguration('ott', 'docs');
+            const configured = (docs as { baseUrl?: unknown } | undefined)?.baseUrl;
+            if (typeof configured === 'string') base = configured;
+        } catch (error) {
+            console.error('[ott] could not read ott.docs.baseUrl, using the default:', error);
+        }
+        this.cachedBase = base;
+        return base;
+    }
 
-    getHoverContent(
+    async getHoverContent(
         document: LangiumDocument,
         params: HoverParams,
-    ): MaybePromise<Hover | undefined> {
+    ): Promise<Hover | undefined> {
         // Hover runs at an arbitrary cursor position over a possibly
         // error-recovered AST whose "required" fields may be undefined. Never
         // let a malformed node turn into a failed LSP request — degrade to "no
@@ -73,12 +107,57 @@ export class OttHoverProvider implements HoverProvider {
             if (!leaf) return undefined;
 
             const node = leaf.astNode;
-            return this.hoverForNode(node, leaf, root)
+            const structural = this.hoverForNode(node, leaf, root)
                 ?? this.hoverForUse(document, offset);
+            // The reference entry explains the *construct*; `structural` explains
+            // the instance under the cursor. Someone who does not know what a
+            // defns block is needs both, so they compose rather than compete.
+            const reference = this.referenceFor(leaf, node);
+            if (!reference) return structural;
+            return this.withReference(structural, leaf, reference);
         } catch (error) {
             console.error('[ott] hover failed on partial AST:', error);
             return undefined;
         }
+    }
+
+    /**
+     * The reference entry for what the cursor is on, if there is one.
+     *
+     * Keyed on the CST leaf's grammar source rather than its text, so a
+     * production or nonterminal named `module` (`tests/test-j.ott:8`) or a
+     * `t as T` ascription is untouched — those are names, not keywords.
+     */
+    private referenceFor(leaf: CstNode, node: AstNode): KeywordDoc | undefined {
+        const source = leaf.grammarSource;
+        if (source && GrammarAST.isKeyword(source)) {
+            // eslint-disable-next-line security/detect-object-injection -- KEYWORD_DOCS is a const we control
+            const entry = KEYWORD_DOCS[source.value] as KeywordDoc | undefined;
+            if (entry) return entry;
+        }
+        // `terminals` is not a keyword at all, just a grammar rule with a
+        // conventional name — but it is the one a reader is most likely to meet
+        // without knowing what it does. Hovering the name reaches here as the
+        // `StringDesc` that holds it, so match on the word and confirm from the
+        // rule above it rather than on the node type alone.
+        if (leaf.text !== 'terminals') return undefined;
+        const rule = AstUtils.getContainerOfType(
+            node, (n): n is GrammarRule => n.$type === 'GrammarRule');
+        return rule?.names.some(n => n.name === 'terminals') ? TERMINALS_DOC : undefined;
+    }
+
+    /** The instance hover with the reference entry appended below a rule. */
+    private async withReference(
+        structural: Hover | undefined, leaf: CstNode, entry: KeywordDoc,
+    ): Promise<Hover> {
+        const reference = renderKeywordDoc(leaf.text, entry, await this.docsBase());
+        const existing = structural?.contents;
+        const above = typeof existing === 'object' && 'value' in existing
+            ? [existing.value, '', '---', ''] : [];
+        return {
+            contents: { kind: 'markdown', value: [...above, ...reference].join('\n') },
+            range: structural?.range ?? leaf.range,
+        };
     }
 
     /**

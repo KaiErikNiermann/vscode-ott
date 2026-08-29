@@ -112,6 +112,11 @@
                     "minimum": 0,
                     "default": 100,
                     "markdownDescription": "Upper bound on a fitted bar, or `0` for none. A handful of real rules run past 150 columns, where an exactly-fitted bar stops helping."
+                },
+                "ott.docs.baseUrl": {
+                    "type": "string",
+                    "default": "https://github.com/KaiErikNiermann/ott/blob/new-docs/docs",
+                    "markdownDescription": "Base URL for the “learn more” links in keyword hovers, joined onto a path under Ott's `docs/` tree. Point it at a published documentation site when one exists; set it to an empty string to drop the links."
                 }
             }
         },
