@@ -1,27 +1,19 @@
 import { execFileSync } from 'node:child_process';
-import { readdirSync, readFileSync, statSync } from 'node:fs';
-import { join, relative } from 'node:path';
+import { readFileSync } from 'node:fs';
+import { relative } from 'node:path';
 import { beforeAll, describe, expect, test } from 'vitest';
 import { EmptyFileSystem, type LangiumDocument } from 'langium';
 import { parseHelper } from 'langium/test';
 import type { SourceFile } from 'ott-language';
 import { createOttServices, isSourceFile } from 'ott-language';
-
-const FIXTURES_DIR = new URL('fixtures', import.meta.url).pathname;
-
-/**
- * Files that ott itself cannot parse (lex errors, not real Ott).
- * Neither ott nor our parser should be expected to handle these.
- */
-const OTT_UNPARSEABLE = new Set([
-    'ocaml_light/library.ott',  // starts with -*-LaTeX-*- modeline
-    'tapl/let_alltt.ott',       // LaTeX-rendered Ott, not actual Ott syntax
-]);
+import { FIXTURES_DIR, OTT_REJECTS, OTT_UNPARSEABLE, collectOttFiles, resolveOttBinary } from './helpers.js';
 
 /**
  * Files that ott parses but our Langium grammar doesn't yet support.
- * Empty: every parseable file in the corpus now parses without errors
- * (the mode-sensitive `%` / `>> .. <<` lexing lives in OttTokenBuilder).
+ * Empty: every parseable file in the corpus now parses without errors. The two
+ * rules that need more than a plain regex terminal both live in OttTokenBuilder
+ * — the mode-sensitive `%` / `>> .. <<` comment lexing, and the module header's
+ * contextual keywords.
  */
 const KNOWN_FAILURES: Record<string, string> = {};
 
@@ -32,25 +24,11 @@ beforeAll(async () => {
     parse = parseHelper<SourceFile>(services.Ott);
 });
 
-/** Recursively collect all .ott files under a directory. */
-function collectOttFiles(dir: string): string[] {
-    const files: string[] = [];
-    for (const entry of readdirSync(dir)) { // eslint-disable-line security/detect-non-literal-fs-filename
-        const full = join(dir, entry);
-        if (statSync(full).isDirectory()) { // eslint-disable-line security/detect-non-literal-fs-filename
-            files.push(...collectOttFiles(full));
-        } else if (entry.endsWith('.ott')) {
-            files.push(full);
-        }
-    }
-    return files.sort();
-}
-
 /** Check if the real `ott` tool can parse a file (ignoring semantic errors). */
-function ottCanParse(filePath: string): boolean {
+function ottCanParse(ottBin: string, filePath: string): boolean {
     try {
-        // eslint-disable-next-line sonarjs/no-os-command-from-path, sonarjs/publicly-writable-directories
-        execFileSync('ott', ['-i', filePath, '-o', '/tmp/ott_fixture_out.tex'], {
+        // eslint-disable-next-line sonarjs/publicly-writable-directories
+        execFileSync(ottBin, ['-i', filePath, '-o', '/tmp/ott_fixture_out.tex'], {
             encoding: 'utf-8',
             stdio: ['pipe', 'pipe', 'pipe'],
             timeout: 30_000,
@@ -110,14 +88,7 @@ describe('Real-world .ott fixtures (Langium parser)', () => {
 // ── Cross-validation with real ott tool ──────────────────────
 
 describe('Cross-validation: Langium agrees with ott', () => {
-    const ottPath = (() => {
-        try {
-            // eslint-disable-next-line sonarjs/no-os-command-from-path
-            return execFileSync('which', ['ott'], { encoding: 'utf-8' }).trim();
-        } catch {
-            return null;
-        }
-    })();
+    const ottPath = resolveOttBinary();
 
     test.runIf(ottPath !== null)('ott tool is available', () => {
         expect(ottPath).toBeTruthy();
@@ -126,10 +97,10 @@ describe('Cross-validation: Langium agrees with ott', () => {
     for (const filePath of fixtureFiles) {
         const name = relative(FIXTURES_DIR, filePath);
 
-        if (OTT_UNPARSEABLE.has(name) || name in KNOWN_FAILURES) continue;
+        if (OTT_UNPARSEABLE.has(name) || OTT_REJECTS.has(name) || name in KNOWN_FAILURES) continue;
 
         test.runIf(ottPath !== null)(`ott also parses: ${name}`, () => {
-            expect(ottCanParse(filePath)).toBe(true);
+            expect(ottCanParse(ottPath as string, filePath)).toBe(true);
         });
     }
 });

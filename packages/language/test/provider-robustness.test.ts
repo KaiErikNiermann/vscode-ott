@@ -1,12 +1,11 @@
-import { readdirSync, readFileSync, statSync } from 'node:fs';
-import { join, relative } from 'node:path';
+import { readFileSync } from 'node:fs';
+import { relative } from 'node:path';
 import { afterEach, beforeAll, beforeEach, describe, expect, test, vi } from 'vitest';
 import { EmptyFileSystem, type CstNode, type LangiumDocument } from 'langium';
 import { parseHelper } from 'langium/test';
 import type { SourceFile } from 'ott-language';
 import { createOttServices } from 'ott-language';
-
-const FIXTURES_DIR = new URL('fixtures', import.meta.url).pathname;
+import { FIXTURES_DIR, collectOttFiles } from './helpers.js';
 
 /**
  * LSP providers run on whatever the parser produces — including the
@@ -33,19 +32,6 @@ beforeAll(async () => {
     services = createOttServices(EmptyFileSystem);
     parse = parseHelper<SourceFile>(services.Ott);
 });
-
-function collectOttFiles(dir: string): string[] {
-    const files: string[] = [];
-    for (const entry of readdirSync(dir)) { // eslint-disable-line security/detect-non-literal-fs-filename
-        const full = join(dir, entry);
-        if (statSync(full).isDirectory()) { // eslint-disable-line security/detect-non-literal-fs-filename
-            files.push(...collectOttFiles(full));
-        } else if (entry.endsWith('.ott')) {
-            files.push(full);
-        }
-    }
-    return files.sort();
-}
 
 /** Start offset of every CST leaf — every position a user could hover. */
 function leafOffsets(root: SourceFile): number[] {

@@ -1,11 +1,12 @@
-import { readdirSync, readFileSync, statSync } from "node:fs";
-import { join, relative } from "node:path";
+import { readFileSync } from "node:fs";
+import { relative } from "node:path";
 import { beforeAll, describe, expect, test } from "vitest";
 import { EmptyFileSystem } from "langium";
 import { parseHelper } from "langium/test";
 import type { SourceFile } from "ott-language";
 import { createOttServices } from "ott-language";
 import type { TextEdit } from 'vscode-languageserver';
+import { FIXTURES_DIR, OTT_UNPARSEABLE, collectOttFiles } from './helpers.js';
 
 let services: ReturnType<typeof createOttServices>;
 let parse: ReturnType<typeof parseHelper<SourceFile>>;
@@ -371,27 +372,11 @@ describe('Idempotence on complex inputs', () => {
 // keep it parseable and be idempotent (formatting twice == once). Runs over the
 // whole example corpus copied into fixtures/.
 
-const FIXTURES_DIR = new URL('fixtures', import.meta.url).pathname;
-// Not real Ott (LaTeX modeline / LaTeX-rendered), kept in sync with fixtures.test.ts.
-const NOT_OTT = new Set(['ocaml_light/library.ott', 'tapl/let_alltt.ott']);
-
-function collectOtt(dir: string): string[] {
-    const out: string[] = [];
-    for (const entry of readdirSync(dir)) { // eslint-disable-line security/detect-non-literal-fs-filename
-        const full = join(dir, entry);
-        if (statSync(full).isDirectory()) { // eslint-disable-line security/detect-non-literal-fs-filename
-            out.push(...collectOtt(full));
-        } else if (entry.endsWith('.ott')) {
-            out.push(full);
-        }
-    }
-    return out.sort();
-}
 
 describe('Formatter never breaks a corpus file', () => {
-    for (const filePath of collectOtt(FIXTURES_DIR)) {
+    for (const filePath of collectOttFiles(FIXTURES_DIR)) {
         const name = relative(FIXTURES_DIR, filePath);
-        if (NOT_OTT.has(name)) continue;
+        if (OTT_UNPARSEABLE.has(name)) continue;
 
         test(`preserves validity + idempotent: ${name}`, async () => {
             const input = readFileSync(filePath, 'utf-8'); // eslint-disable-line security/detect-non-literal-fs-filename
