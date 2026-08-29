@@ -10,6 +10,7 @@ import { OttDocumentSymbolProvider } from './ott-document-symbol-provider.js';
 import { OttFormatter } from './ott-formatter.js';
 import { OttHoverProvider } from './ott-hover-provider.js';
 import { OttTokenBuilder } from './ott-token-builder.js';
+import { OttSymbolIndex } from './symbols/index-service.js';
 
 /**
  * Declaration of custom services - add your own service classes here.
@@ -17,6 +18,14 @@ import { OttTokenBuilder } from './ott-token-builder.js';
 export type OttAddedServices = {
     validation: {
         OttValidator: OttValidator
+    },
+    /**
+     * Cross-file symbol table. It lives in the language module rather than the
+     * shared one because there is exactly one language here, and it reaches
+     * `services.shared` for the document plumbing it listens to.
+     */
+    symbols: {
+        SymbolIndex: OttSymbolIndex
     }
 }
 
@@ -34,6 +43,9 @@ export type OttServices = LangiumServices & OttAddedServices
 export const OttModule: Module<OttServices, PartialLangiumServices & OttAddedServices> = {
     validation: {
         OttValidator: () => new OttValidator(),
+    },
+    symbols: {
+        SymbolIndex: services => new OttSymbolIndex(services.shared),
     },
     parser: {
         TokenBuilder: () => new OttTokenBuilder(),
@@ -63,6 +75,11 @@ export function createOttServices(context: DefaultSharedModuleContext): {
     );
     shared.ServiceRegistry.register(Ott);
     registerValidationChecks(Ott);
+    // Langium instantiates services lazily, but the symbol index has to be alive
+    // before the first document is built — it registers its document-build
+    // listeners in its constructor, and a listener added after the workspace has
+    // loaded would miss every file already parsed.
+    void Ott.symbols.SymbolIndex;
     if (!context.connection) {
         shared.workspace.ConfigurationProvider.initialized({});
     }
