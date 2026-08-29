@@ -8,6 +8,9 @@ import type {
     GrammarBlock, GrammarRule, Production,
     DefnClass, Defn, HomName,
 } from './generated/ast.js';
+import { basename } from 'node:path';
+import type { OttSymbolIndex } from './symbols/index-service.js';
+import { locateSymbol } from './symbols/locate.js';
 
 /** Known homomorphism target descriptions. */
 const HOM_DESCRIPTIONS: Record<string, string> = {
@@ -38,7 +41,19 @@ const HOM_DESCRIPTIONS: Record<string, string> = {
     'phantom': 'Phantom rule — not included in generated code',
 };
 
+/** A markdown hover from a list of lines. */
+function markdown(lines: readonly string[]): Hover {
+    return { contents: { kind: 'markdown', value: lines.join('\n') } };
+}
+
 export class OttHoverProvider implements HoverProvider {
+    /** Absent in a bare service container; hover then keeps its old behaviour. */
+    private readonly index?: OttSymbolIndex;
+
+    constructor(services?: { symbols?: { SymbolIndex?: OttSymbolIndex } }) {
+        this.index = services?.symbols?.SymbolIndex;
+    }
+
 
     getHoverContent(
         document: LangiumDocument,
@@ -58,11 +73,46 @@ export class OttHoverProvider implements HoverProvider {
             if (!leaf) return undefined;
 
             const node = leaf.astNode;
-            return this.hoverForNode(node, leaf, root);
+            return this.hoverForNode(node, leaf, root)
+                ?? this.hoverForUse(document, offset);
         } catch (error) {
             console.error('[ott] hover failed on partial AST:', error);
             return undefined;
         }
+    }
+
+    /**
+     * Hover for an object-language identifier — a use, not a declaration.
+     * Reports what it resolves to and where it was declared, which for a
+     * cross-file project is the part a reader cannot otherwise see.
+     */
+    private hoverForUse(document: LangiumDocument, offset: number): Hover | undefined {
+        const index = this.index;
+        if (!index) return undefined;
+        const located = locateSymbol(document, offset, index.lookup(document.uri));
+        if (!located) return undefined;
+
+        const { token, entry } = located;
+        if (!entry) {
+            return token.kind === 'terminal'
+                ? markdown([`**terminal** \`${token.text}\``])
+                : undefined;
+        }
+
+        const lines = [`**${entry.kind}** \`${entry.surface}\``];
+        if (entry.internal !== entry.surface) {
+            lines.push('', `Declared as \`${entry.internal}\` in its own module.`);
+        }
+        if (token.text !== entry.surface) {
+            // `T1` is `T` with a suffix; the suffix carries no identity, so say
+            // which root the reader is actually looking at.
+            lines.push('', `Root \`${entry.surface}\`, suffixed.`);
+        }
+        const files = [...new Set(entry.declarations.map(d => basename(d.uri)))];
+        lines.push('', files.length === 1
+            ? `Declared in \`${files[0]}\`.`
+            : `Declared in ${files.length} files: ${files.map(f => `\`${f}\``).join(', ')}.`);
+        return markdown(lines);
     }
 
     private hoverForNode(
@@ -128,7 +178,7 @@ export class OttHoverProvider implements HoverProvider {
             `\`| ${this.productionElements(node)} :: :: ${node.name}\``,
         ];
         if (node.modifiers.length > 0) {
-            lines.push(`', 'Modifiers: ${node.modifiers.join(', ')}`);
+            lines.push('', `Modifiers: ${node.modifiers.join(', ')}`);
         }
         if (node.bindspecs.length > 0) {
             lines.push('', `Bind specs: ${node.bindspecs.length}`);

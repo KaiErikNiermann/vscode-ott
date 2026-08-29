@@ -12,6 +12,7 @@ import { OttHoverProvider } from './ott-hover-provider.js';
 import { OttTokenBuilder } from './ott-token-builder.js';
 import { OttSymbolIndex } from './symbols/index-service.js';
 import { OttSemanticTokenProvider } from './ott-semantic-token-provider.js';
+import { OttDefinitionProvider, OttReferencesProvider } from './ott-navigation.js';
 
 /**
  * Declaration of custom services - add your own service classes here.
@@ -54,8 +55,10 @@ export const OttModule: Module<OttServices, PartialLangiumServices & OttAddedSer
     lsp: {
         DocumentSymbolProvider: () => new OttDocumentSymbolProvider(),
         Formatter: () => new OttFormatter(),
-        HoverProvider: () => new OttHoverProvider(),
+        HoverProvider: services => new OttHoverProvider(services),
         SemanticTokenProvider: services => new OttSemanticTokenProvider(services),
+        DefinitionProvider: services => new OttDefinitionProvider(services),
+        ReferencesProvider: services => new OttReferencesProvider(services),
     },
 };
 

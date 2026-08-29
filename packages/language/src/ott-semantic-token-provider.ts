@@ -2,9 +2,9 @@ import type { AstNode } from 'langium';
 import type { LangiumServices } from 'langium/lsp';
 import { AbstractSemanticTokenProvider, type SemanticTokenAcceptor } from 'langium/lsp';
 import { SemanticTokenTypes } from 'vscode-languageserver';
-import type { Defn, Fundefn, GrammarRule, HomInnerBlock, Production } from './generated/ast.js';
 import type { Classifier, ClassifiedToken, TokenClass } from './symbols/classify.js';
 import type { OttSymbolIndex } from './symbols/index-service.js';
+import { spansOfNode } from './symbols/spans.js';
 
 /**
  * Semantic highlighting for the object language inside Ott specifications.
@@ -72,69 +72,17 @@ export class OttSemanticTokenProvider extends AbstractSemanticTokenProvider {
     private highlight(
         node: AstNode, acceptor: SemanticTokenAcceptor,
     ): void | undefined | 'prune' {
-        switch (node.$type) {
-            case 'EmbedBlock':
-                // Verbatim target-language text with no splices Ott reads.
-                return 'prune';
-            case 'GrammarRule':
-                this.highlightProductions(node as GrammarRule, acceptor);
-                return undefined;
-            case 'Defn':
-            case 'Fundefn':
-                this.highlightDefn(node as Defn | Fundefn, acceptor);
-                return undefined;
-            case 'HomInnerBlock':
-                // `[[ … ]]` inside a hom body: object language embedded in
-                // target-language text.
-                this.highlightSpan(node as HomInnerBlock, acceptor);
-                return undefined;
-            default:
-                return undefined;
+        // Verbatim target-language text with nothing Ott reads.
+        if (node.$type === 'EmbedBlock') return 'prune';
+        for (const span of spansOfNode(node)) {
+            this.scanRange(span.offset, span.end, acceptor);
         }
+        return undefined;
     }
 
     private classifier(): Classifier | undefined {
         const document = this.currentDocument;
         return document === undefined ? undefined : this.index.lookup(document.uri).classifier;
-    }
-
-    /** The right-hand side of each production, where the declaration site is. */
-    private highlightProductions(rule: GrammarRule, acceptor: SemanticTokenAcceptor): void {
-        for (const production of rule.productions ?? []) {
-            this.scanNodes((production as Production).elements ?? [], acceptor);
-        }
-    }
-
-    /** A defn's judgement form, and the premises and conclusions after `by`. */
-    private highlightDefn(defn: Defn | Fundefn, acceptor: SemanticTokenAcceptor): void {
-        this.scanNodes(defn.elements ?? [], acceptor);
-        // Rule separators and `{{ com … }}` blocks are Ott syntax; break the
-        // body into the runs of object-language text between them so a span
-        // never straddles one.
-        let run: AstNode[] = [];
-        for (const item of defn.body ?? []) {
-            if (item.$type === 'RuleSeparator' || item.$type === 'DefnComment') {
-                this.scanNodes(run, acceptor);
-                run = [];
-            } else {
-                run.push(item);
-            }
-        }
-        this.scanNodes(run, acceptor);
-    }
-
-    /** Scan the source span covered by a contiguous run of nodes. */
-    private scanNodes(nodes: readonly AstNode[], acceptor: SemanticTokenAcceptor): void {
-        if (nodes.length === 0) return;
-        const first = nodes[0].$cstNode;
-        const last = nodes[nodes.length - 1].$cstNode;
-        if (!first || !last) return;
-        this.scanRange(first.offset, last.end, acceptor);
-    }
-
-    private highlightSpan(node: AstNode, acceptor: SemanticTokenAcceptor): void {
-        const cst = node.$cstNode;
-        if (cst) this.scanRange(cst.offset, cst.end, acceptor);
     }
 
     private scanRange(offset: number, end: number, acceptor: SemanticTokenAcceptor): void {
