@@ -11644,7 +11644,7 @@ References
 %  The num library implements integer arithmetic and rational arithmetic in
 %arbitrary precision.
 %  More documentation on the functions provided in this library can be found in
-%The CAML Numbers Reference Manual by  ValÃ©rie MÃ©nissier-Morain, technical
+%The CAML Numbers Reference Manual by  Valérie Ménissier-Morain, technical
 %report 141, INRIA, july 1992 (available electronically,
 %ftp://ftp.inria.fr/INRIA/publication/RT/RT-0141.ps.gz).
 %  Programs that use the num library must be linked as follows: 

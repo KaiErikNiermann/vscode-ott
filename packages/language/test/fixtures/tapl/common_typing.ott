@@ -6,6 +6,8 @@
 %  rightmost assumption in a G.  One could equally well add an explicit
 %  well-formedness condition to the T_Var rule.)
 
+module tapl
+
 grammar
 G {{ tex \Gamma }} :: G_ ::=                      {{ com contexts: }}
         {{ isa (termvar*T) list }} 

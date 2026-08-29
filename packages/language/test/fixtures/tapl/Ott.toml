@@ -1,0 +1,215 @@
+# The TAPL languages, assembled from single-feature fragments.
+#
+# The top-level Makefile carried these ten source lists as SYS_* variables, and
+# examples/tapl/Makefile carried two of them again with a comment saying they
+# had to be kept in sync with the Makefile and with regression/regression.otl.
+# Both paths in that comment were already stale.  This file is the one copy.
+#
+#   ott build --profile roughlyfullsimple
+#   ott build --profile bool --explain
+#
+# Fragment order is significant: ott requires a definition to precede its uses,
+# and -merge is what lets several files extend the same nonterminal.  These
+# lists are transcribed mechanically from the Makefile variables they replace.
+
+[package]
+name    = "tapl"
+version = "0.1.0"
+
+[spec]
+# The default build is the fullest system.
+files = [
+  "common.ott",
+  "common_index.ott",
+  "common_labels.ott",
+  "common_typing.ott",
+  "bool.ott",
+  "bool_typing.ott",
+  "nat.ott",
+  "nat_typing.ott",
+  "arrow_typing.ott",
+  "basety.ott",
+  "unit.ott",
+  "seq.ott",
+  "ascribe.ott",
+  "let.ott",
+  "product.ott",
+  "sum.ott",
+  "fix.ott",
+  "tuple.ott",
+  "variant.ott",
+]
+merge = true
+
+# The sharing is declared in the sources now: every fragment begins `module
+# tapl', which says these files are one language split into features rather than
+# independent packages that happen to collide on a name.  That travels with the
+# specification, so a fragment set built by hand rather than through `ott build'
+# is checked the same way.
+
+[target.tex]
+out = "build/stlc.tex"
+
+[target.coq]
+out = "build/stlc_auto.v"
+expand_list_types = true
+
+[target.isa]
+out = "build/Stlc.thy"
+
+[target.hol]
+out = "build/StlcScript.sml"
+
+[profile.bool]
+files = [
+  "common.ott",
+  "bool.ott",
+]
+
+[profile.arith]
+files = [
+  "nat.ott",
+  "common.ott",
+  "bool.ott",
+]
+
+[profile.untyped]
+files = [
+  "common.ott",
+  "bool.ott",
+]
+
+[profile.puresimple]
+files = [
+  "common.ott",
+  "common_typing.ott",
+  "arrow_typing.ott",
+]
+
+[profile.tybool]
+files = [
+  "bool.ott",
+  "bool_typing.ott",
+  "common.ott",
+  "common_typing.ott",
+  "arrow_typing.ott",
+]
+
+[profile.tuple]
+files = [
+  "common.ott",
+  "common_typing.ott",
+  "common_index.ott",
+  "unit.ott",
+  "tuple.ott",
+]
+
+[profile.puresub]
+files = [
+  "common.ott",
+  "common_typing.ott",
+  "arrow_typing.ott",
+  "sub_arrow.ott",
+  "top.ott",
+]
+
+[profile.purercdsub]
+files = [
+  "common.ott",
+  "common_typing.ott",
+  "arrow_typing.ott",
+  "sub_arrow.ott",
+  "top.ott",
+  "common_labels.ott",
+  "common_index.ott",
+  "record.ott",
+  "sub_record.ott",
+]
+
+[profile.sortoffullsimple]
+files = [
+  "common.ott",
+  "common_typing.ott",
+  "common_labels.ott",
+  "common_index.ott",
+  "arrow_typing.ott",
+  "basety.ott",
+  "bool.ott",
+  "bool_typing.ott",
+  "nat.ott",
+  "nat_typing.ott",
+  "unit.ott",
+  "seq.ott",
+  "ascribe.ott",
+  "inert.ott",
+  "let.ott",
+  "sum.ott",
+  "variant.ott",
+  "product.ott",
+  "tuple.ott",
+  "record.ott",
+  "fix.ott",
+]
+
+[profile.roughlyfullsimple]
+files = [
+  "common.ott",
+  "common_index.ott",
+  "common_labels.ott",
+  "common_typing.ott",
+  "bool.ott",
+  "bool_typing.ott",
+  "nat.ott",
+  "nat_typing.ott",
+  "arrow_typing.ott",
+  "basety.ott",
+  "unit.ott",
+  "seq.ott",
+  "ascribe.ott",
+  "let.ott",
+  "product.ott",
+  "sum.ott",
+  "fix.ott",
+  "tuple.ott",
+  "variant.ott",
+]
+
+# From records_sources in examples/tapl/Makefile: the same language with
+# records in place of nothing, and its own set of outputs.
+[profile.records]
+files = [
+  "common.ott",
+  "common_index.ott",
+  "common_labels.ott",
+  "common_typing.ott",
+  "bool.ott",
+  "bool_typing.ott",
+  "nat.ott",
+  "nat_typing.ott",
+  "arrow_typing.ott",
+  "basety.ott",
+  "unit.ott",
+  "seq.ott",
+  "ascribe.ott",
+  "let.ott",
+  "product.ott",
+  "sum.ott",
+  "fix.ott",
+  "tuple.ott",
+  "record.ott",
+  "variant.ott",
+]
+
+[profile.records.target.tex]
+out = "build/records.tex"
+
+[profile.records.target.coq]
+out = "build/records_auto.v"
+expand_list_types = false   # as records_auto.v in examples/tapl/Makefile
+
+[profile.records.target.isa]
+out = "build/Records.thy"
+
+[profile.records.target.hol]
+out = "build/RecordsScript.sml"
+

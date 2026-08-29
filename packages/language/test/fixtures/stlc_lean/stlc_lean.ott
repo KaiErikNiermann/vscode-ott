@@ -1,0 +1,186 @@
+%% A simply-typed lambda calculus with booleans, written to show what the
+%% Ott Lean 4 backend emits.  Deliberately small: every declaration below
+%% turns into something you can point at in stlc_lean.lean.
+%%
+%%   ott -lean_imports Ott -i stlc_lean.ott -o stlc_lean.lean
+%%
+%% See README for a walk-through of the source-to-Lean correspondence.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% METAVARIABLES
+
+metavar var, x, y ::=
+  {{ repr-locally-nameless }}
+  {{ com term variables }}
+  {{ lex alphanum }}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% GRAMMAR
+
+grammar
+
+typ, T :: 'typ_' ::= {{ com types }} {{ lean-equality }}
+  | bool        ::   :: bool   {{ com booleans }}
+    {{ tex \mathsf{bool} }}
+  | T1 -> T2    ::   :: arrow  {{ com functions }}
+  | ( T )       :: S :: paren  {{ lean ([[T]]) }}
+
+exp, e, v :: 'e_' ::= {{ com expressions }}
+  | x                       ::   :: var  {{ com variable }}
+  | \ x : T . e             ::   :: abs
+    (+ bind x in e +)
+    {{ com abstraction }}
+    {{ tex [[\]][[x]]\!:\![[T]].[[e]] }}
+  | e1 e2                   ::   :: app  {{ com application }}
+  | true                    ::   :: true
+  | false                   ::   :: false
+  | if e1 then e2 else e3   ::   :: if   {{ com conditional }}
+  | ( e )                   :: S :: paren
+    {{ lean ([[e]]) }}
+  | e1 [ x ~> e2 ]          :: M :: subst
+    {{ lean (open_exp_wrt_exp [[x e1]] [[e2]]) }}
+    {{ tex [[e1]] [ [[x]] [[~>]] [[e2]] ] }}
+
+substitutions
+  single exp x :: subst
+
+freevars
+  exp x :: fv
+
+parsing
+  typ_arrow right typ_arrow
+  e_app left e_app
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% CONTEXTS, TERMINALS, FORMULAS
+
+grammar
+
+%% No inductive type of its own: `ctx' is `Ott.Ctx typ', i.e.
+%% `List (Ott.Atom x typ)', and the two forms below are spelled out as homs.
+ctx, G {{ tex \Gamma }} :: 'ctx_' ::= {{ com typing context }}
+                                      {{ lean Ott.Ctx typ }}
+  | empty       ::   :: empty {{ lean [] }}
+                              {{ tex \bullet }}
+  | G , x : T   ::   :: cons  {{ lean (Ott.one [[x]] [[T]] ++ [[G]]) }}
+
+terminals :: 'terminals_' ::=
+  | \       ::   :: lambda     {{ tex \lambda }}
+  | -->     ::   :: step       {{ tex \longrightarrow }}
+  | ->      ::   :: arrow      {{ tex \rightarrow }}
+  | |-      ::   :: turnstile  {{ tex \vdash }}
+  | in      ::   :: in         {{ tex \in }}
+  | ~>      ::   :: leadsto    {{ tex \leadsto }}
+
+formula :: 'formula_' ::=
+  | judgement       ::   :: judgement
+  | uniq G          ::   :: uniq
+    {{ lean Ott.uniq [[G]] }}
+    {{ tex \mathsf{uniq}\,[[G]] }}
+  | x : T in G      ::   :: binds
+    {{ lean Ott.binds [[x]] [[T]] [[G]] }}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% HAND-WRITTEN LEAN
+
+%% Emitted verbatim after the generated syntax, so it may mention `exp`.
+%% The `Ott` import supplies `Atom`, `Ctx`, `binds` and `uniq`; see ../../lean/Ott.
+embed
+{{ lean
+
+/-- The closed values of the language, as a decidable predicate rather than
+the `value` relation below -- handy for `#eval` and `decide`. -/
+def isValue : exp → Bool
+  | .e_abs _ _   => true
+  | .e_true      => true
+  | .e_false     => true
+  | _            => false
+
+}}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% JUDGEMENTS
+
+defns
+Jvalue :: '' ::=
+
+defn
+value e :: :: value :: 'value_'
+{{ com Values }}
+by
+
+--------------------- :: abs
+value \x:T.e
+
+--------------------- :: true
+value true
+
+--------------------- :: false
+value false
+
+
+defns
+Jtyping :: '' ::=
+
+defn
+G |- e : T :: :: typing :: 'typing_'
+{{ com Typing }}
+by
+
+uniq G
+x : T in G
+------------- :: var
+G |- x : T
+
+G , x : T1 |- e : T2
+-------------------------- :: abs
+G |- \x:T1.e : T1 -> T2
+
+G |- e1 : T1 -> T2
+G |- e2 : T1
+------------------- :: app
+G |- e1 e2 : T2
+
+------------------ :: true
+G |- true : bool
+
+------------------- :: false
+G |- false : bool
+
+G |- e1 : bool
+G |- e2 : T
+G |- e3 : T
+---------------------------------- :: if
+G |- if e1 then e2 else e3 : T
+
+
+defns
+Jstep :: '' ::=
+
+defn
+e1 --> e2 :: :: step :: 'step_'
+{{ com Call-by-value small-step reduction }}
+by
+
+value v
+-------------------------------- :: beta
+(\x:T.e) v --> e [ x ~> v ]
+
+e1 --> e1'
+------------------- :: app1
+e1 e2 --> e1' e2
+
+value v
+e2 --> e2'
+------------------- :: app2
+v e2 --> v e2'
+
+--------------------------------------- :: if_true
+if true then e2 else e3 --> e2
+
+---------------------------------------- :: if_false
+if false then e2 else e3 --> e3
+
+e1 --> e1'
+------------------------------------------------------------- :: if
+if e1 then e2 else e3 --> if e1' then e2 else e3

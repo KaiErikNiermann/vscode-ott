@@ -1,4 +1,6 @@
 
+module tapl
+
 grammar
 t :: Tm ::=                                        {{ com terms: }}
   | t as T                        ::   :: Ascribe    {{ com ascription }}

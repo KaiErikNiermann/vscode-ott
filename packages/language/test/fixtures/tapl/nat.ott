@@ -6,6 +6,8 @@
 %  of the t grammar, so here we flatten occurrences of nv onto v. That 
 %  introduces some junk values, of course.)
 
+module tapl
+
 grammar
 t :: Tm ::=                                        {{ com terms: }}
   | 0                             ::   :: Zero       {{ com constant zero }}

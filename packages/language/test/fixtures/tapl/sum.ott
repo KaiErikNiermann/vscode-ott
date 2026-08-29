@@ -1,6 +1,8 @@
 % - we add binding in a case
 % - the Case constructor and rule names have "Sm" appended to avoid a clash with variants
 
+module tapl
+
 grammar
 T {{ hol Typ }}, S, U :: Ty ::=                              {{ com types: }}
   | T1 + T2                                    ::   :: Sum     {{ com sum type }}

@@ -1,3 +1,5 @@
+module tapl
+
 metavar label, l, k ::=
  {{ isa string }} {{ coq nat }} {{ hol string }} {{ lex alphanum }}  {{ tex \mathsf{[[label]]} }} 
  {{ coq-equality }}

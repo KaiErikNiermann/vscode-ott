@@ -3,6 +3,8 @@
 % (As in TAPL, there are no types in this fragment.  Isabelle would therefore
 %  complain that it cannot define an empty type.)
 
+module tapl
+
 metavar termvar, x ::=
   {{ isa string }} {{ coq nat }} {{ coq-equality }} {{ hol string }}
   {{ lex alphanum }} {{ tex \mathsf{[[termvar]]} }}

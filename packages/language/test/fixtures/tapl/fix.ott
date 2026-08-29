@@ -1,6 +1,8 @@
 % TAPL also introduces a derived form
 % letrec x:T1=t1 in t2  =def=  let x = fix(\x:T1.t2) in t2
 
+module tapl
+
 grammar
 t :: Tm ::=                                        {{ com terms: }}
   | fix t                         ::   :: Fix        {{ com fixed point of [[t]] }}

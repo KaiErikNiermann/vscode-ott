@@ -1,3 +1,5 @@
+module tapl
+
 grammar
 T {{ hol Typ }}, S, U :: Ty ::=                      {{ com types: }}
   | Top                          ::   :: Top           {{ com maximum type }}

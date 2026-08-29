@@ -2,6 +2,8 @@
 % {li=vi ^{i IN 1..j-1}, lj=tj, lk=tk^{k IN j+1..n}
 % which ott does not support, so that rule is slightly rephrased here.
 
+module tapl
+
 grammar
 T {{ hol Typ }}, S, U :: Ty ::=                             {{ com types: }}
   | { </ li : Ti // , // i IN 1 .. n /> } ::   :: Record      {{ com type of records }} 

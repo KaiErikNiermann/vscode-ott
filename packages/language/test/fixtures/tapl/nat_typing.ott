@@ -1,3 +1,5 @@
+module tapl
+
 grammar
 T {{ hol Typ }}, S, U :: Ty ::=                     {{ com types: }}
   | Nat                          ::   :: Nat          {{ com type of natural numbers }}

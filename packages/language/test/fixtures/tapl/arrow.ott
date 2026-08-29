@@ -1,4 +1,6 @@
 % TAPL [arrow]  Untyped lambda-calculus, p72
+module tapl
+
 metavar termvar, x ::=
   {{ isa string }} {{ coq nat }} {{ coq-equality }} {{ hol string }}
   {{ lex alphanum }} {{ tex \mathsf{[[termvar]]} }}

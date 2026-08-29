@@ -6,6 +6,8 @@
 % only to disambiguate these pairs from tuples, in the (artificial) case in
 % which we build a language containing both.
 
+module tapl
+
 grammar
 T {{ hol Typ }}, S, U :: Ty ::=                             {{ com types: }}
   | T1 * T2                               ::   :: Pair        {{ com product type }}

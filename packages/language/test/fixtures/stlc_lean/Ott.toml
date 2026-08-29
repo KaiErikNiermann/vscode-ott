@@ -1,0 +1,22 @@
+# Ott project manifest.  `ott build' lowers this to exactly the command lines
+# the Makefile used to spell out; `ott build --explain' prints them.
+#
+# The Makefile is still here, and still owns everything downstream of Ott --
+# lake, pdflatex, and the golden-file check.  That split is deliberate: the
+# manifest describes what Ott produces, not how the proof assistant is driven.
+
+[package]
+name    = "stlc_lean"
+version = "0.1.0"
+
+[spec]
+files = ["stlc_lean.ott"]
+
+# Output lands beside the source rather than in build/: stlc_lean.lean is
+# committed as a golden file and lake picks it up as a module of this package.
+[target.lean]
+out     = "stlc_lean.lean"
+imports = ["Ott"]        # -> -lean_imports Ott; this spec needs no Mathlib
+
+[target.tex]
+out = "stlc_lean.tex"

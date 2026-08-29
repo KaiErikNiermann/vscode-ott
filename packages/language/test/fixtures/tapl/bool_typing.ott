@@ -1,5 +1,7 @@
 % TAPL [bool typing]  Typed booleans
 
+module tapl
+
 grammar
 T {{ hol Typ }}, S, U :: Ty ::=                       {{ com types: }}
   | Bool                         ::   :: Bool          {{ com type of booleans }}

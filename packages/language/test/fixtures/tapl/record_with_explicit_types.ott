@@ -3,6 +3,8 @@
 % there's a substitution 
 
 
+module tapl
+
 metavar termvar, x ::=
   {{ isa string }} {{ coq nat }} {{ coq-equality }} {{ hol string }}
   {{ lex alphanum }} {{ tex \mathsf{[[termvar]]} }}

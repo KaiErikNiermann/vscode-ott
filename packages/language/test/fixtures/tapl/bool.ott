@@ -1,4 +1,6 @@
 % TAPL [bool]  Booleans, p34
+module tapl
+
 grammar
 t :: Tm ::=                                        {{ com terms: }}
   | true                          ::   :: True       {{ com constant true }}

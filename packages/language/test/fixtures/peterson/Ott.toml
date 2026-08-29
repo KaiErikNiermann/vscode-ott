@@ -1,0 +1,29 @@
+# Peterson's mutual-exclusion algorithm in a small concurrent OCaml fragment.
+#
+# This spec sat at the top of examples/ for years with no build glue of any
+# kind: no Makefile, no directory, and nothing in the tree referencing it.  It
+# is here to be buildable, and to be the smallest example of a manifest that
+# fans out to several backends.
+#
+#   ott build                 # every target below
+#   ott build --target coq    # just one
+#   ott build --explain       # the command lines, without running them
+
+[package]
+name    = "peterson"
+version = "0.1.0"
+
+[spec]
+files = ["peterson_caml.ott"]
+
+[target.tex]
+out = "build/peterson.tex"
+
+[target.coq]
+out = "build/peterson.v"
+
+[target.isa]
+out = "build/Peterson.thy"
+
+[target.hol]
+out = "build/PetersonScript.sml"

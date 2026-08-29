@@ -1,3 +1,5 @@
+module tapl
+
 grammar
 t :: Tm ::=                                        {{ com terms: }}
   | inert T                       ::   :: Inert      {{ com inert element of type [[T]] }}

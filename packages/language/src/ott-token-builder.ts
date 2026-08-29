@@ -2,6 +2,7 @@ import { DefaultTokenBuilder, GrammarAST } from 'langium';
 import type { Grammar } from 'langium';
 import type { TokenBuilderOptions } from 'langium';
 import type { CustomPatternMatcherFunc, TokenType, TokenVocabulary } from 'chevrotain';
+import { HEADER_KEYWORDS, headerEnd } from './ott-header.js';
 
 /**
  * Ott's real lexer is stateful (metalang / elements / hom / defnlang modes), so
@@ -86,9 +87,40 @@ const blockComment: CustomPatternMatcherFunc = (text, offset) => {
     return null; // unterminated: fall back to the plain `%` / `>` handling
 };
 
+/**
+ * Matcher for a header keyword. Matches the literal word, but only while the
+ * offset is still inside the file header (see `ott-header.ts`); past that the
+ * pattern returns null, Chevrotain falls through to the next token type, and
+ * the word lexes as an ordinary `ID` — which is what keeps productions named
+ * `module` or `as` parsing.
+ */
+function headerKeyword(word: string): CustomPatternMatcherFunc {
+    return (text, offset) => {
+        if (offset >= headerEnd(text) || !text.startsWith(word, offset)) {
+            return null;
+        }
+        return [word];
+    };
+}
+
 /** Token builder that swaps the COMMENT and BLOCK_COMMENT patterns for the
- *  context-sensitive matchers above. */
+ *  context-sensitive matchers above, and gates the module-header keywords on
+ *  the header region. */
 export class OttTokenBuilder extends DefaultTokenBuilder {
+    protected override buildKeywordToken(
+        keyword: GrammarAST.Keyword,
+        terminalTokens: TokenType[],
+        caseInsensitive: boolean,
+    ): TokenType {
+        const token = super.buildKeywordToken(keyword, terminalTokens, caseInsensitive);
+        if (HEADER_KEYWORDS.includes(keyword.value)) {
+            token.PATTERN = headerKeyword(keyword.value);
+            token.LINE_BREAKS = false;
+            token.START_CHARS_HINT = [keyword.value[0]];
+        }
+        return token;
+    }
+
     override buildTokens(grammar: Grammar, options?: TokenBuilderOptions): TokenVocabulary {
         const vocabulary = super.buildTokens(grammar, options);
         // Langium lists keyword tokens before terminals, so the single-char `>`
@@ -99,6 +131,17 @@ export class OttTokenBuilder extends DefaultTokenBuilder {
             const idx = vocabulary.findIndex(t => t.name === 'BLOCK_COMMENT');
             if (idx > 0) {
                 vocabulary.unshift(vocabulary.splice(idx, 1)[0]);
+            }
+            // Ott names may start with a digit (`:: 1`, `:: 1C`), so ID covers
+            // digit-led words while INT is matched first to keep pure-digit runs
+            // usable as `prec` levels and comprehension bounds. Chevrotain takes
+            // the first match, so without a longer-alternative `1C` would split
+            // into INT(`1`) + ID(`C`); LONGER_ALT lets ID win when it reaches
+            // further, which is exactly Ott's `pre_ident`.
+            const int = vocabulary.find(t => t.name === 'INT');
+            const id = vocabulary.find(t => t.name === 'ID');
+            if (int && id) {
+                int.LONGER_ALT = id;
             }
         }
         return vocabulary;

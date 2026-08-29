@@ -2,6 +2,8 @@
 %  | t1 ; t2                       :: S :: [[ (\x:Unit.t2) t1 where x notin FV(t2) ]]
 
 
+module tapl
+
 grammar
 t :: Tm ::=                                        {{ com terms: }}
   | unit                          ::   :: Unit       {{ com constant [[unit]] }}

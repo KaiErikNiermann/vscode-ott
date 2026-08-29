@@ -2,6 +2,9 @@
 % Pervasives".  Maybe that's just an Ott bug.  We work around it in
 % the Makefile.
 
+module l2
+extends l1
+
 metavar variable, x ::= 
   {{ com Variables }}
   {{ lem string }}

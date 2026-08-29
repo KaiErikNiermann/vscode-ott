@@ -6,6 +6,8 @@
 % In the E_Case rule the premise here is t-->t', not involving a subscripted t,
 % to avoid clashing (The TAPL uses a t0-->t0' which here would be misinterpreted.).
 
+module tapl
+
 grammar
 T {{ hol Typ }}, S, U :: Ty ::=                             {{ com types: }}
   | < </ li : Ti // , // i IN 1 .. n /> > ::   :: Variant     {{ com type of variants }}

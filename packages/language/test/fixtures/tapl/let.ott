@@ -1,3 +1,5 @@
+module tapl
+
 grammar
 t :: Tm ::=                                        {{ com terms: }}
   | let x = t in t'                   ::   :: Let (+ bind x in t' +)     {{ com let binding }}

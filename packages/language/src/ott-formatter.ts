@@ -3,8 +3,8 @@ import type { NodeFormatter } from 'langium/lsp';
 import { AbstractFormatter, Formatting } from 'langium/lsp';
 import { match } from 'ts-pattern';
 import type {
-    Defn, DefnClass, FreevarsBlock, GrammarRule, Homomorphism,
-    MetavarDefn, ParsingBlock, Production,
+    Defn, DefnClass, ExtendsDecl, FreevarsBlock, GrammarRule, Homomorphism,
+    ImportsDecl, MetavarDefn, ModuleDecl, ParsingBlock, Production,
     SourceFile, SubrulesBlock, SubstitutionsBlock,
 } from './generated/ast.js';
 
@@ -40,6 +40,8 @@ export class OttFormatter extends AbstractFormatter {
     private formatNode(node: AstNode): void {
         match(node.$type)
             .with('SourceFile', () => this.formatSourceFile(node as SourceFile))
+            .with('ModuleDecl', 'ExtendsDecl', 'ImportsDecl',
+                () => this.formatHeaderDecl(node as ModuleDecl | ExtendsDecl | ImportsDecl))
             .with('MetavarDefn', () => this.formatMetavarDefn(node as MetavarDefn))
             .with('GrammarRule', () => this.formatGrammarRule(node as GrammarRule))
             .with('Production', () => this.formatProduction(node as Production))
@@ -73,14 +75,45 @@ export class OttFormatter extends AbstractFormatter {
     // ── Top-level structure ──────────────────────────────────
 
     private formatSourceFile(node: SourceFile): void {
-        if (node.items.length === 0) return;
+        const header = node.header ?? [];
+        if (node.items.length === 0 && header.length === 0) return;
         const formatter = this.getNodeFormatter(node);
-        // First item: no leading blank lines
-        formatter.node(node.items[0]).prepend(Formatting.noSpace());
+
+        // Module header: one declaration per line, no blank line between them
+        // (`module l2` / `extends l1` are consecutive lines upstream), then a
+        // blank line before the first item.
+        if (header.length > 0) {
+            formatter.node(header[0]).prepend(Formatting.noSpace());
+            if (header.length > 1) {
+                formatter.nodes(...header.slice(1)).prepend(Formatting.newLine());
+            }
+        }
+
+        if (node.items.length > 0) {
+            // Without a header the first item starts the file; with one it must
+            // keep the line break, or `module tapl` and `metavar` would be
+            // joined into `module taplmetavar`.
+            formatter.node(node.items[0]).prepend(
+                header.length > 0 ? Formatting.newLines(2) : Formatting.noSpace(),
+            );
+        }
         // Subsequent items: blank line between them
         if (node.items.length > 1) {
             formatter.nodes(...node.items.slice(1)).prepend(Formatting.newLines(2));
         }
+    }
+
+    // ── Module header ────────────────────────────────────────
+
+    /** `module N`, `extends N renaming a as b, c as d`, `imports N ...`. */
+    private formatHeaderDecl(node: ModuleDecl | ExtendsDecl | ImportsDecl): void {
+        const formatter = this.getNodeFormatter(node);
+        for (const kw of ['module', 'extends', 'imports', 'renaming', 'as']) {
+            formatter.keyword(kw).append(Formatting.oneSpace());
+        }
+        formatter.keywords('renaming').prepend(Formatting.oneSpace());
+        formatter.keywords('as').prepend(Formatting.oneSpace());
+        formatter.keywords(',').prepend(Formatting.noSpace()).append(Formatting.oneSpace());
     }
 
     // ── Metavar/Indexvar ─────────────────────────────────────
