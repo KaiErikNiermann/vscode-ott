@@ -1,7 +1,7 @@
 {
     "name": "vscode-vscode-ott",
     "description": "Language support for the Ott specification language",
-    "version": "0.0.6",
+    "version": "0.1.0",
     "displayName": "vscode-ott",
     "publisher": "KaiErikNiermann",
     "license": "MIT",
