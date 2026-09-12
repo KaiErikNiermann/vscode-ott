@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { bench, describe } from 'vitest';
+import { describe, test } from 'vitest';
 import { EmptyFileSystem } from 'langium';
 import { parseHelper } from 'langium/test';
 import type { FileSymbols, SourceFile } from 'ott-language';
@@ -27,6 +27,18 @@ const OCAML_LIGHT = join(FIXTURES_DIR, 'ocaml_light');
 const BENCH_FILES = collectOttFiles(OCAML_LIGHT)
     .filter(f => !f.endsWith('library.ott'));
 
+/**
+ * One measurement per test. Vitest 5 moved `bench` from a top-level import to a
+ * fixture on the test context, so every benchmark is now a test that runs one —
+ * this keeps the call sites reading as they did, and the name in the comparison
+ * table matching the name of the test that produced it.
+ */
+function benchmark(name: string, fn: () => void | Promise<void>): void {
+    test(name, async ({ bench }) => {
+        await bench(name, fn).run();
+    });
+}
+
 const services = createOttServices(EmptyFileSystem);
 const parse = parseHelper<SourceFile>(services.Ott);
 
@@ -46,7 +58,7 @@ for (const { file, text } of sources) {
 }
 
 describe('parsing (the cost the index is measured against)', () => {
-    bench('parse the ocaml_light sources', async () => {
+    benchmark('parse the ocaml_light sources', async () => {
         for (const { text } of sources) {
             await parse(text);
         }
@@ -54,17 +66,17 @@ describe('parsing (the cost the index is measured against)', () => {
 });
 
 describe('symbol index', () => {
-    bench('collect declarations from a parsed file', () => {
+    benchmark('collect declarations from a parsed file', () => {
         for (const { file, root } of parsed) {
             collectFileSymbols(root, file);
         }
     });
 
-    bench('assemble the project symbol table', () => {
+    benchmark('assemble the project symbol table', () => {
         buildProjectSymbols(symbols);
     });
 
-    bench('rebuild after one file changes', () => {
+    benchmark('rebuild after one file changes', () => {
         // The editor's hot path: one document reparsed, the project table
         // dropped and rebuilt from cached per-file symbols.
         const first = parsed[0];
@@ -76,7 +88,7 @@ describe('symbol index', () => {
 describe('classification', () => {
     const project = buildProjectSymbols(symbols);
 
-    bench('classify every rule body in the project', () => {
+    benchmark('classify every rule body in the project', () => {
         for (const { file, text, root } of parsed) {
             const classifier = createClassifier(
                 project.scopeOf(file), project.terminals, project.annotationNames,
@@ -93,7 +105,7 @@ describe('classification', () => {
         }
     });
 
-    bench('build a classifier for one file', () => {
+    benchmark('build a classifier for one file', () => {
         createClassifier(
             project.scopeOf(parsed[0].file), project.terminals, project.annotationNames,
         );
