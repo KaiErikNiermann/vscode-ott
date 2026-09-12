@@ -116,7 +116,7 @@ wait-release:
     #!/usr/bin/env bash
     set -euo pipefail
     echo "Waiting for Release workflow..."
-    run_id=$(gh run list --workflow "Release" --limit 1 --json databaseId -q '.[0].databaseId')
+    run_id=$(gh run list --workflow "Release VS Code Extension" --limit 1 --json databaseId -q '.[0].databaseId')
     gh run watch "$run_id" --exit-status && \
         echo "Release workflow succeeded" || \
         { echo "Release workflow failed"; exit 1; }
