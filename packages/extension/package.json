@@ -171,7 +171,7 @@
         "vscode-languageserver": "~10.0.1"
     },
     "devDependencies": {
-        "@types/node": "~26.4.1",
+        "@types/node": "~26.5.1",
         "@types/vscode": "~1.110.0",
         "concurrently": "~10.0.5",
         "esbuild": "~0.28.2"
