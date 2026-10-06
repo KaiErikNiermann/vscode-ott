@@ -22,7 +22,7 @@
     "dependencies": {
         "ott-language": "workspace:*",
         "langium": "~4.4.0",
-        "chalk": "~6.0.0",
+        "chalk": "~6.0.1",
         "commander": "~15.0.0"
     },
     "devDependencies": {
