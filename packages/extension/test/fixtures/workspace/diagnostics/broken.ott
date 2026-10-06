@@ -1,0 +1,6 @@
+%% Does not parse: a production with no name after its `::'.
+
+grammar
+
+exp, e :: 'e_' ::=
+  | e1 e2   ::

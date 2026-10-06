@@ -1,0 +1,11 @@
+%% Record labels, kept in their own file so that leaving this file out of the
+%% source set (the `core` profile) leaves `l` unresolved in typing.ott.
+
+metavar label, l ::=
+  {{ com record labels }}
+  {{ lex alphanum }}
+
+grammar
+
+exp, e :: 'e_' ::=
+  | e . l       ::   :: proj  {{ com projection }}

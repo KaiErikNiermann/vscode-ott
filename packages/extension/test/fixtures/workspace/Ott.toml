@@ -1,0 +1,19 @@
+# Fixture project for the end-to-end suites. The default source set reaches
+# labels.ott; the `core` profile leaves it out, so whether a use of `l` in
+# typing.ott resolves shows which source set the server is using.
+
+[package]
+name    = "e2e"
+version = "0.1.0"
+
+[spec]
+files = ["syntax.ott", "labels.ott", "typing.ott"]
+extends = ["exp"]
+merge = true
+
+[profile.core]
+files = ["syntax.ott", "typing.ott"]
+merge = true
+
+[target.tex]
+out = "e2e.tex"

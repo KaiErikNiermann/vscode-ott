@@ -13,6 +13,7 @@
         "langium:generate": "pnpm --filter ott-language run langium:generate",
         "langium:watch": "pnpm --filter ott-language run langium:watch",
         "test": "pnpm --filter ott-language run test",
+        "test:lsp": "pnpm --filter vscode-vscode-ott run test:lsp",
         "lint": "eslint --no-warn-ignored packages/*/src/**/*.ts",
         "lint:fix": "eslint --fix --no-warn-ignored packages/*/src/**/*.ts"
     },

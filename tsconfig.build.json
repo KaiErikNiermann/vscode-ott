@@ -12,6 +12,9 @@
         },
         {
             "path": "./packages/extension/tsconfig.json"
+        },
+        {
+            "path": "./packages/extension/tsconfig.test.json"
         }
     ]
 }

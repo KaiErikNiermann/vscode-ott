@@ -1,0 +1,29 @@
+%% Typing rules. Every root used here is declared in syntax.ott or labels.ott.
+
+defns
+Jtyping :: '' ::=
+
+defn
+G |- e : T :: :: typing :: 'typing_'
+{{ com Typing }}
+by
+
+x : T in G
+------------- :: var
+G |- x : T
+
+G , x : T1 |- e : T2
+-------------------------- :: abs
+G |- \x:T1.e : T1 -> T2
+
+G |- e1 : T1 -> T2
+G |- e2 : T1
+------------------- :: app
+G |- e1 e2 : T2
+
+------------------ :: true
+G |- true : bool
+
+G |- e : T
+---------------- :: proj
+G |- e . l : T

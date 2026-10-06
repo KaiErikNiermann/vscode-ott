@@ -162,11 +162,12 @@
         "build": "pnpm run build:prepare && tsc -b tsconfig.json && node esbuild.mjs",
         "build:clean": "pnpm run clean && pnpm run build",
         "package": "pnpm dlx @vscode/vsce package --no-dependencies --out ../..",
+        "test:lsp": "vitest run",
         "watch": "pnpm run build:prepare && concurrently -n tsc,esbuild -c blue,yellow \"tsc -b tsconfig.json --watch\" \"node esbuild.mjs --watch\""
     },
     "dependencies": {
-        "ott-language": "workspace:*",
         "langium": "~4.4.0",
+        "ott-language": "workspace:*",
         "vscode-languageclient": "~10.1.1",
         "vscode-languageserver": "~10.1.1"
     },
@@ -174,7 +175,9 @@
         "@types/node": "~26.6.4",
         "@types/vscode": "~1.110.0",
         "concurrently": "~10.0.5",
-        "esbuild": "~0.28.2"
+        "esbuild": "~0.28.2",
+        "vitest": "~5.0.3",
+        "vscode-languageserver-protocol": "3.18.3"
     },
     "vsce": {
         "dependencies": false

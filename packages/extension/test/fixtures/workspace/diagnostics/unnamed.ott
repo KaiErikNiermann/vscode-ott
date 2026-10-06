@@ -1,0 +1,19 @@
+%% Parses, but the rule below has no name after its bar.
+
+metavar var, x ::=
+  {{ lex alphanum }}
+
+grammar
+
+exp, e :: 'e_' ::=
+  | x           ::   :: var
+
+defns
+Jval :: '' ::=
+
+defn
+val e :: :: val :: 'val_'
+by
+
+-----------
+val x

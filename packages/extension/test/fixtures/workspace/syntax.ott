@@ -1,0 +1,34 @@
+%% A small simply-typed lambda calculus, split across files so the
+%% language server has to resolve symbols project-wide.
+
+metavar var, x ::=
+  {{ com term variables }}
+  {{ lex alphanum }}
+
+grammar
+
+typ, T :: 'typ_' ::= {{ com types }}
+  | bool        ::   :: bool   {{ com booleans }}
+  | T1 -> T2    ::   :: arrow  {{ com functions }}
+  | ( T )       :: S :: paren
+
+exp, e :: 'e_' ::= {{ com expressions }}
+  | x                       ::   :: var  {{ com variable }}
+  | \ x : T . e             ::   :: abs  (+ bind x in e +)
+  | e1 e2                   ::   :: app  {{ com application }}
+  | true                    ::   :: true
+  | false                   ::   :: false
+  | ( e )                   :: S :: paren
+
+ctx, G :: 'ctx_' ::= {{ com typing context }}
+  | empty       ::   :: empty
+  | G , x : T   ::   :: cons
+
+terminals :: 'terminals_' ::=
+  | \       ::   :: lambda     {{ tex \lambda }}
+  | ->      ::   :: arrow      {{ tex \rightarrow }}
+  | |-      ::   :: turnstile  {{ tex \vdash }}
+
+formula :: 'formula_' ::=
+  | judgement       ::   :: judgement
+  | x : T in G      ::   :: binds
