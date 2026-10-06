@@ -163,6 +163,8 @@
         "build:clean": "pnpm run clean && pnpm run build",
         "package": "pnpm dlx @vscode/vsce package --no-dependencies --out ../..",
         "test:lsp": "vitest run",
+        "build:test": "esbuild test/vscode/*.test.ts --bundle --platform=node --format=cjs --target=node20 --sourcemap --outdir=out/test/vscode --out-extension:.js=.cjs --external:vscode --log-level=warning --log-override:empty-import-meta=silent",
+        "test:vscode": "pnpm run build:test && vscode-test",
         "watch": "pnpm run build:prepare && concurrently -n tsc,esbuild -c blue,yellow \"tsc -b tsconfig.json --watch\" \"node esbuild.mjs --watch\""
     },
     "dependencies": {
@@ -172,10 +174,14 @@
         "vscode-languageserver": "~10.1.1"
     },
     "devDependencies": {
+        "@types/mocha": "~10.0.10",
         "@types/node": "~26.6.4",
         "@types/vscode": "~1.110.0",
+        "@vscode/test-cli": "~0.0.15",
+        "@vscode/test-electron": "~3.1.0",
         "concurrently": "~10.0.5",
         "esbuild": "~0.28.2",
+        "mocha": "~12.0.3",
         "vitest": "~5.0.3",
         "vscode-languageserver-protocol": "3.18.3"
     },

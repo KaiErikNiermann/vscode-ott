@@ -13,3 +13,4 @@ packages/extension/LICENSE
 *.tsbuildinfo
 *.vsix
 packages/extension/icons/
+.vscode-test/
