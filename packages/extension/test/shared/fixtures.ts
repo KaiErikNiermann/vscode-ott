@@ -58,3 +58,29 @@ export function positionIn(text: string, needle: string, nth = 0, offset = 0): P
 export const LABEL_USE = { file: 'typing.ott', needle: 'e . l : T', offset: 4 } as const;
 
 export const RULE_SEPARATOR_WARNING = 'Rule separator should have a name.';
+
+export interface Edit {
+    readonly range: { readonly start: Position; readonly end: Position };
+    readonly newText: string;
+}
+
+/**
+ * Apply formatter edits to `text`. VS Code minimises a provider's edits before
+ * handing them out, so the suites compare resulting text rather than edits.
+ */
+export function applyEdits(text: string, edits: readonly Edit[]): string {
+    const starts = [0];
+    for (let i = 0; i < text.length; i++) if (text[i] === '\n') starts.push(i + 1);
+    const offsetAt = (p: Position) => (starts[p.line] ?? text.length) + p.character;
+    return [...edits]
+        .sort((a, b) => offsetAt(b.range.start) - offsetAt(a.range.start))
+        .reduce((out, e) => out.slice(0, offsetAt(e.range.start)) + e.newText + out.slice(offsetAt(e.range.end)), text);
+}
+
+/**
+ * Dashes in the typing rule `var`'s bar. The fixture has 13 over premises and
+ * a conclusion 10 columns wide, so `ott.format.rules.bar = fit` makes it 10.
+ */
+export function varBarWidth(text: string): number {
+    return /^(-+)\s*::\s*var\s*$/m.exec(text)?.[1]?.length ?? -1;
+}

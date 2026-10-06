@@ -7,7 +7,7 @@ import {
     type Location, type LocationLink, type TextEdit,
 } from 'vscode-languageserver-protocol/node';
 import {
-    LABEL_USE, RULE_SEPARATOR_WARNING, positionIn, readFixture, type Position,
+    LABEL_USE, RULE_SEPARATOR_WARNING, applyEdits, positionIn, readFixture, varBarWidth, type Position,
 } from '../shared/fixtures.js';
 import { LspSession, uriOf } from './session.js';
 
@@ -154,28 +154,23 @@ describe('navigation', () => {
 });
 
 describe('settings', () => {
-    const isBar = (text: string) => /^-{3,}/.test(text.trim());
-
-    async function format(): Promise<TextEdit[]> {
+    /** Width of the `var` rule's bar after formatting typing.ott. */
+    async function formattedBar(): Promise<number> {
         const uri = await session.open('typing.ott');
-        return (await session.connection.sendRequest(DocumentFormattingRequest.type, {
+        const edits: TextEdit[] = (await session.connection.sendRequest(DocumentFormattingRequest.type, {
             textDocument: { uri },
             options: { tabSize: 2, insertSpaces: true },
         })) ?? [];
+        return varBarWidth(applyEdits(readFixture('typing.ott'), edits));
     }
 
     test('ott.format.rules.bar = fit resizes rule bars, and off leaves them', async () => {
         await session.configure({});
-        expect((await format()).some(e => isBar(e.newText))).toBe(false);
-
+        expect(await formattedBar()).toBe(13);
         await session.configure({ format: { rules: { bar: 'fit' } } });
-        const fitted = await format();
-        // The `var` rule's bar is 13 dashes over 10-column lines.
-        expect(fitted.some(e => e.newText.includes('-'.repeat(10)) && !e.newText.includes('-'.repeat(11))))
-            .toBe(true);
-
+        expect(await formattedBar()).toBe(10);
         await session.configure({});
-        expect((await format()).some(e => isBar(e.newText))).toBe(false);
+        expect(await formattedBar()).toBe(13);
     });
 
     test('ott.docs.baseUrl repoints keyword hover links without a restart', async () => {
