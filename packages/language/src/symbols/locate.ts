@@ -41,6 +41,33 @@ export function locateSymbol(
     return undefined;
 }
 
+/**
+ * The declaration whose name is at `offset`, as if it were a use of itself.
+ *
+ * A declaration's name sits in Ott syntax rather than object-language text, so
+ * `locateSymbol` never sees it — yet the name is where an editor's "find all
+ * references" is most often asked from. Navigation falls back to this;
+ * hover does not need to, since it explains declarations structurally.
+ */
+export function locateDeclaration(
+    document: LangiumDocument, offset: number, lookup: SymbolLookup,
+): LocatedSymbol | undefined {
+    const path = document.uri.fsPath;
+    const declaration = lookup.project.allDeclarations.find(d =>
+        d.uri === path && offset >= d.nameOffset && offset < d.nameEnd);
+    if (!declaration) return undefined;
+
+    const token: ClassifiedToken = {
+        offset: declaration.nameOffset,
+        length: declaration.nameEnd - declaration.nameOffset,
+        text: declaration.root,
+        kind: declaration.kind,
+        root: declaration.root,
+    };
+    const entry = lookup.scope.get(declaration.root);
+    return entry === undefined ? { token } : { token, entry };
+}
+
 /** Every declaration site of the symbol at `offset`. */
 export function declarationsAt(
     document: LangiumDocument, offset: number, lookup: SymbolLookup,

@@ -4,7 +4,7 @@ import type { LangiumServices } from 'langium/lsp';
 import { Location, LocationLink, Range, type DefinitionParams, type ReferenceParams } from 'vscode-languageserver';
 import type { Declaration } from './symbols/collect.js';
 import type { OttSymbolIndex } from './symbols/index-service.js';
-import { locateSymbol } from './symbols/locate.js';
+import { locateDeclaration, locateSymbol } from './symbols/locate.js';
 import { spansOfNode } from './symbols/spans.js';
 
 /**
@@ -55,7 +55,8 @@ export class OttDefinitionProvider implements DefinitionProvider {
     ): LocationLink[] | undefined {
         const offset = document.textDocument.offsetAt(params.position);
         const lookup = this.services.symbols.SymbolIndex.lookup(document.uri);
-        const located = locateSymbol(document, offset, lookup);
+        const located = locateSymbol(document, offset, lookup)
+            ?? locateDeclaration(document, offset, lookup);
         if (!located?.entry) return undefined;
 
         const source = Range.create(
@@ -92,7 +93,8 @@ export class OttReferencesProvider implements ReferencesProvider {
         const offset = document.textDocument.offsetAt(params.position);
         const index = this.services.symbols.SymbolIndex;
         const lookup = index.lookup(document.uri);
-        const located = locateSymbol(document, offset, lookup);
+        const located = locateSymbol(document, offset, lookup)
+            ?? locateDeclaration(document, offset, lookup);
         const root = located?.token.root;
         if (root === undefined || !located?.entry) return [];
 

@@ -116,6 +116,30 @@ describe('find references', () => {
         const files = new Set(locations.map(l => l.uri.split('/').pop()));
         expect(files.size).toBeGreaterThan(1);
     });
+
+    test('works from the declaration name, where an editor usually asks', async () => {
+        // The name in `expr , e :: Expr_ ::=` is Ott syntax, not object-language
+        // text, so it is not a "use" — but it is where Shift+F12 is pressed.
+        const dir = join(FIXTURES_DIR, 'ocaml_light');
+        const documents = await loadDir(dir);
+        const syntax = documents.find(d => d.uri.fsPath.endsWith('caml_plain_syntax.ott'));
+        if (!syntax) expect.fail('caml_plain_syntax.ott not loaded');
+        const position = positionOf(syntax, ' expr , e  :: Expr_', 0);
+        position.character += 1;
+
+        const locations = await services.Ott.lsp.ReferencesProvider!.findReferences(syntax, {
+            textDocument: { uri: uriOf(syntax) },
+            position,
+            context: { includeDeclaration: false },
+        });
+        expect(locations.length).toBeGreaterThan(0);
+
+        const links = await services.Ott.lsp.DefinitionProvider!.getDefinition(syntax, {
+            textDocument: { uri: uriOf(syntax) },
+            position,
+        });
+        expect(links?.some(l => l.targetUri === uriOf(syntax))).toBe(true);
+    });
 });
 
 describe('hover', () => {
