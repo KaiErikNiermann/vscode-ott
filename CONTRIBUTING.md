@@ -21,6 +21,12 @@ pnpm run build
    pnpm run lint        # eslint
    pnpm run test        # vitest
    ```
+   Changes that touch the server, the client or packaging should also pass the end-to-end suites (both need `pnpm run build` first; `just e2e` does it all):
+   ```sh
+   pnpm run test:lsp                                # the server over stdio, as Neovim runs it
+   pnpm --filter vscode-vscode-ott run test:vscode  # the extension inside a downloaded VS Code
+   ```
+   `VSCODE_TEST_VERSION=1.110.0` runs the VS Code suite on a specific release, and `OTT_EXTENSION_PATH=<unpacked .vsix>/extension` runs it against a packaged build rather than the checkout. On a headless Linux box, prefix it with `xvfb-run -a`.
 3. Commit using [conventional commits](https://www.conventionalcommits.org/) (e.g. `feat:`, `fix:`, `test:`, `chore:`)
 
 ## Project layout
@@ -34,6 +40,9 @@ pnpm run build
 | `packages/language/test/fixtures/` | Real-world `.ott` files from [ott-lang/ott](https://github.com/ott-lang/ott) examples |
 | `packages/language/syntaxes/` | Custom TextMate grammar (hand-written, not auto-generated) |
 | `packages/extension/` | VS Code extension wrapper |
+| `packages/extension/test/lsp/` | End-to-end: the bundled server driven over stdio JSON-RPC |
+| `packages/extension/test/vscode/` | End-to-end: the extension inside VS Code (`@vscode/test-cli`) |
+| `packages/extension/test/fixtures/workspace/` | Multi-file project with an `Ott.toml` that both e2e suites open |
 | `packages/cli/` | CLI tool |
 | `editors/neovim/` | Neovim plugin |
 

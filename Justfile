@@ -22,6 +22,11 @@ lint: install
 test: install
     pnpm test
 
+# Run the end-to-end suites: the server over stdio, then the extension in VS Code
+e2e: build
+    pnpm test:lsp
+    pnpm --filter vscode-vscode-ott run test:vscode
+
 # Run all checks
 check: lint test build
 
