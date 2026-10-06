@@ -55,6 +55,7 @@ interface HoverServices {
     readonly symbols?: { SymbolIndex?: OttSymbolIndex };
     readonly shared?: { workspace?: { ConfigurationProvider?: {
         getConfiguration(language: string, configuration: string): Promise<unknown>;
+        onConfigurationSectionUpdate?(listener: () => void): unknown;
     } } };
 }
 
@@ -63,6 +64,7 @@ export class OttHoverProvider implements HoverProvider {
     private readonly index?: OttSymbolIndex;
     private readonly services?: HoverServices;
     private cachedBase?: string;
+    private listening = false;
 
     constructor(services?: HoverServices) {
         this.services = services;
@@ -77,6 +79,10 @@ export class OttHoverProvider implements HoverProvider {
     private async docsBase(): Promise<string> {
         if (this.cachedBase !== undefined) return this.cachedBase;
         const configuration = this.services?.shared?.workspace?.ConfigurationProvider;
+        if (configuration?.onConfigurationSectionUpdate && !this.listening) {
+            this.listening = true;
+            configuration.onConfigurationSectionUpdate(() => { this.cachedBase = undefined; });
+        }
         let base = DEFAULT_DOCS_BASE;
         try {
             const docs = await configuration?.getConfiguration('ott', 'docs');

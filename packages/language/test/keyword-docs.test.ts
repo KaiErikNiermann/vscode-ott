@@ -86,6 +86,20 @@ describe('hovering a keyword', () => {
             + '/guide/syntax-definitions.rst');
     });
 
+    test('follows ott.docs.baseUrl as it changes, without a restart', async () => {
+        const source = 'gram|CURSOR|mar\n\nt :: \'t_\' ::=\n  | x :: :: v\n';
+        const configure = (docs: object) => services.shared.workspace.ConfigurationProvider
+            .updateConfiguration({ settings: { ott: { docs } } });
+        try {
+            configure({ baseUrl: 'https://first.example/docs' });
+            expect(await hoverAt(source)).toContain('https://first.example/docs/guide/');
+            configure({ baseUrl: 'https://second.example/docs' });
+            expect(await hoverAt(source)).toContain('https://second.example/docs/guide/');
+        } finally {
+            configure({});
+        }
+    });
+
     test('explains `by`, which introduces the rule list', async () => {
         const hover = await hoverAt("defns\nJ :: '' ::=\n\ndefn\n"
             + "G |- e : T :: :: typing :: 'typing_'\nb|CURSOR|y\n\n---- :: r\nG |- e : T\n");
