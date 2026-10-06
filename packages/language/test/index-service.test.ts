@@ -5,7 +5,7 @@ import { parseHelper } from 'langium/test';
 import { NodeFileSystem } from 'langium/node';
 import { createOttServices } from 'ott-language';
 import type { SourceFile } from 'ott-language';
-import { buildProjectSymbols, collectFileSymbols } from 'ott-language';
+import { buildProjectSymbols, collectFileSymbols, readProjectSelection } from 'ott-language';
 import { readFileSync } from 'node:fs';
 import { FIXTURES_DIR, collectOttFiles } from './helpers.js';
 
@@ -100,6 +100,36 @@ describe('the index populates itself from document builds', () => {
         await services.shared.workspace.DocumentBuilder.update([], [l1.uri]);
 
         expect(index.lookup(URI.file(join(dir, 'l2.ott'))).scope.get('store')).toBeUndefined();
+    });
+});
+
+describe('ott.project settings', () => {
+    test('a profile pushed by the client narrows the source set, and clearing it restores it', async () => {
+        const dir = join(FIXTURES_DIR, 'tapl');
+        await load(collectOttFiles(dir));
+        const index = services.Ott.symbols.SymbolIndex;
+        const common = join(dir, 'common.ott');
+        const configure = (project: object) => services.shared.workspace.ConfigurationProvider
+            .updateConfiguration({ settings: { ott: { project } } });
+
+        const full = index.projectScopeOf(common).files.length;
+        try {
+            configure({ profile: 'bool' });
+            const bool = index.projectScopeOf(common).files.length;
+            expect(bool).toBeGreaterThan(0);
+            expect(bool).toBeLessThan(full);
+        } finally {
+            configure({});
+        }
+        expect(index.projectScopeOf(common).files.length).toBe(full);
+    });
+
+    test('malformed values fall back to the default source set', () => {
+        expect(readProjectSelection(undefined)).toEqual({});
+        expect(readProjectSelection({ profile: 3, features: 'x' })).toEqual({});
+        expect(readProjectSelection({ profile: '', features: ['', 7] })).toEqual({});
+        expect(readProjectSelection({ profile: 'p', features: ['a', 1, 'b'] }))
+            .toEqual({ profile: 'p', features: ['a', 'b'] });
     });
 });
 

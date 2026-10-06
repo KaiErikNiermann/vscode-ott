@@ -49,6 +49,23 @@ export interface ProjectSelection {
     features?: readonly string[];
 }
 
+/**
+ * Read `ott.project` out of whatever the client sent. Like the formatter's
+ * settings it is unvalidated JSON, so anything malformed is dropped rather
+ * than thrown: a bad setting must leave the default source set, not no index.
+ */
+export function readProjectSelection(configuration: unknown): ProjectSelection {
+    if (typeof configuration !== 'object' || configuration === null) return {};
+    const { profile, features } = configuration as { profile?: unknown; features?: unknown };
+    const selection: ProjectSelection = {};
+    if (typeof profile === 'string' && profile !== '') selection.profile = profile;
+    if (Array.isArray(features)) {
+        const names = features.filter((f): f is string => typeof f === 'string' && f !== '');
+        if (names.length > 0) selection.features = names;
+    }
+    return selection;
+}
+
 const toPath = (uri: URI | string): string =>
     (typeof uri === 'string' ? URI.parse(uri) : uri).fsPath;
 
@@ -71,6 +88,28 @@ export class OttSymbolIndex {
             // milliseconds, and staleness here would be silent.
             this.projects.clear();
         });
+        this.followSettings();
+    }
+
+    /**
+     * Keep the selection in step with `ott.project.*`: the value the client
+     * has at start-up, then every change it pushes. A change can land while the
+     * start-up fetch is still in flight, and the fetch must not then overwrite
+     * it with the older value.
+     */
+    private followSettings(): void {
+        const configuration = this.shared.workspace.ConfigurationProvider;
+        let changed = false;
+        configuration.onConfigurationSectionUpdate(update => {
+            if (update.section !== 'ott') return;
+            changed = true;
+            const settings = update.configuration as { project?: unknown } | null | undefined;
+            this.setSelection(readProjectSelection(settings?.project));
+        });
+        configuration.getConfiguration('ott', 'project').then(
+            project => { if (!changed) this.setSelection(readProjectSelection(project)); },
+            (error: unknown) => console.error('[ott] could not read ott.project settings:', error),
+        );
     }
 
     /** Apply the user's profile/feature selection, invalidating what it changes. */
