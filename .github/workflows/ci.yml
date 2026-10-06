@@ -44,3 +44,52 @@ jobs:
       - name: Package extension (dry-run)
         run: pnpm dlx @vscode/vsce package --no-dependencies --out /tmp/vscode-ott-ci.vsix
         working-directory: packages/extension
+
+  e2e:
+    # The extension as it ships: the stdio server the Neovim plugin starts, then
+    # the packaged .vsix inside a real VS Code - on the oldest release
+    # engines.vscode admits and on the current one.
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        vscode-version: ['1.110.0', stable]
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: pnpm/action-setup@v6
+        with:
+          version: 10.14.0
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Generate Langium artifacts
+        run: pnpm run langium:generate
+
+      - name: Build
+        run: pnpm run build
+
+      - name: LSP over stdio
+        run: pnpm run test:lsp
+
+      - name: Package and unpack the extension
+        run: |
+          pnpm dlx @vscode/vsce package --no-dependencies --out "$RUNNER_TEMP/ott.vsix"
+          unzip -q "$RUNNER_TEMP/ott.vsix" -d "$RUNNER_TEMP/ott-vsix"
+        working-directory: packages/extension
+
+      - uses: actions/cache@v6
+        with:
+          path: packages/extension/.vscode-test
+          key: vscode-test-${{ runner.os }}-${{ matrix.vscode-version }}
+
+      - name: VS Code ${{ matrix.vscode-version }}
+        run: xvfb-run -a pnpm --filter vscode-vscode-ott run test:vscode
+        env:
+          VSCODE_TEST_VERSION: ${{ matrix.vscode-version }}
+          OTT_EXTENSION_PATH: ${{ runner.temp }}/ott-vsix/extension
