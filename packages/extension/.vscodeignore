@@ -1,2 +1,15 @@
+# Only the two bundles, the manifest and its contributed assets ship; the
+# server and client are self-contained esbuild bundles, so nothing else under
+# out/, and no sources, configs or tests, is needed at runtime.
 .vscode/**
 .vscode-test/**
+.vscode-test.mjs
+src/**
+test/**
+out/test/**
+**/*.map
+**/*.tsbuildinfo
+**/tsconfig*.json
+esbuild.mjs
+vitest.config.ts
+langium-quickstart.md
