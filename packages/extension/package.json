@@ -170,8 +170,8 @@
     "dependencies": {
         "langium": "~4.4.0",
         "ott-language": "workspace:*",
-        "vscode-languageclient": "~10.1.1",
-        "vscode-languageserver": "~10.1.1"
+        "vscode-languageclient": "~10.1.2",
+        "vscode-languageserver": "~10.1.2"
     },
     "devDependencies": {
         "@types/mocha": "~10.0.10",
