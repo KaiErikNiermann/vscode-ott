@@ -37,7 +37,7 @@
     "dependencies": {
         "langium": "~4.4.0",
         "smol-toml": "^1.9.1",
-        "ts-pattern": "^5.9.0",
+        "ts-pattern": "^5.9.2",
         "vscode-languageserver": "~10.1.2"
     },
     "devDependencies": {
