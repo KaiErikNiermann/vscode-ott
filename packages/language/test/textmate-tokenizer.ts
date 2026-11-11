@@ -1,5 +1,6 @@
-import { readFileSync } from 'node:fs';
+import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
+import { join } from 'node:path';
 import oniguruma from 'vscode-oniguruma';
 import textmate from 'vscode-textmate';
 
@@ -69,4 +70,29 @@ export function tokensOf(lines: readonly Token[][], text: string): Token[] {
 /** Whether some scope of `token` starts with `prefix`. */
 export function hasScope(token: Token | undefined, prefix: string): boolean {
     return token !== undefined && token.scopes.some(s => s === prefix || s.startsWith(prefix + '.') || s.startsWith(prefix + ' '));
+}
+
+/** The stub grammars under test/grammars, by the scope name they stand in for. */
+export const STUB_GRAMMARS = {
+    tex: { 'text.tex': new URL('grammars/tex-stub.tmLanguage.json', import.meta.url).pathname },
+} as const;
+
+/**
+ * The first of `candidates` that exists, for tests that also run against a
+ * real grammar when this machine has one installed (VS Code's own LaTeX
+ * grammar from the e2e download, Tinymist's Typst grammar from the user's
+ * extensions).  Undefined when none does: those tests are then skipped, and
+ * the stub-grammar tests still cover the Ott side.
+ */
+export function installedGrammar(candidates: readonly string[]): string | undefined {
+    // eslint-disable-next-line security/detect-non-literal-fs-filename
+    return candidates.find(path => existsSync(path));
+}
+
+/** Paths under a directory whose name starts with `prefix`, for versioned extension folders. */
+export function versionedDirs(parent: string, prefix: string): string[] {
+    // eslint-disable-next-line security/detect-non-literal-fs-filename
+    if (!existsSync(parent)) return [];
+    // eslint-disable-next-line security/detect-non-literal-fs-filename
+    return readdirSync(parent).filter(d => d.startsWith(prefix)).sort().reverse().map(d => join(parent, d));
 }

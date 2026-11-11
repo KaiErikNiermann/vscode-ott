@@ -12,6 +12,9 @@
       "include": "#module-header"
     },
     {
+      "include": "#hom-tex-math"
+    },
+    {
       "include": "#homomorphism"
     },
     {
@@ -42,6 +45,15 @@
       "include": "#namespace-prefix"
     }
   ],
+  "injections": {
+    "L:meta.embedded.inline.latex": {
+      "patterns": [
+        {
+          "include": "#hom-inner-block"
+        }
+      ]
+    }
+  },
   "repository": {
     "comment": {
       "name": "comment.line.percentage.ott",
@@ -66,6 +78,36 @@
     "keyword-control": {
       "name": "keyword.control.ott",
       "match": "\\b(by|IN|single|multiple|left|right|nonassoc|prec)\\b"
+    },
+    "hom-tex-math": {
+      "name": "meta.homomorphism.ott",
+      "begin": "(\\{\\{)\\s*(tex|texvar)(?![\\w-])",
+      "end": "(\\}\\})",
+      "beginCaptures": {
+        "1": {
+          "name": "punctuation.definition.homomorphism.begin.ott"
+        },
+        "2": {
+          "name": "entity.name.type.hom-name.ott"
+        }
+      },
+      "endCaptures": {
+        "1": {
+          "name": "punctuation.definition.homomorphism.end.ott"
+        }
+      },
+      "contentName": "meta.embedded.inline.latex",
+      "patterns": [
+        {
+          "include": "#hom-inner-block"
+        },
+        {
+          "include": "#dot-form"
+        },
+        {
+          "include": "text.tex#math-content"
+        }
+      ]
     },
     "homomorphism": {
       "name": "meta.homomorphism.ott",

@@ -1,0 +1,18 @@
+{
+  "name": "TeX stub for the Ott grammar tests",
+  "scopeName": "text.tex",
+  "patterns": [{ "include": "#math-content" }],
+  "repository": {
+    "math-content": {
+      "patterns": [
+        { "match": "\\\\[A-Za-z]+", "name": "support.function.stub.tex" },
+        {
+          "begin": "\\{",
+          "end": "\\}",
+          "name": "meta.group.braces.stub.tex",
+          "patterns": [{ "include": "#math-content" }]
+        }
+      ]
+    }
+  }
+}
