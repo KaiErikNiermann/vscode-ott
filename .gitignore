@@ -17,3 +17,6 @@ packages/extension/icons/
 
 # Local scratch output (probes, built parsers)
 .scratch/
+
+# Local records of upstream bugs
+.upstream-issues/
