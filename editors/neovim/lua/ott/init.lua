@@ -2,6 +2,12 @@ local M = {}
 
 local PARSER_URL = "https://github.com/KaiErikNiermann/tree-sitter-ott"
 
+-- The tree-sitter-ott commit :TSInstall builds.  Pinned rather than tracking
+-- the fork's main, so a parser change reaches users only when this is bumped
+-- -- and the queries in queries/ott/, which name its node types, are checked
+-- against it in the same change.  c3d86a4: fix(scanner), delimiter counts.
+local PARSER_REVISION = "c3d86a42f4e2df3ccbacc3689432d11809e2cfb5"
+
 --- Register the tree-sitter-ott parser with nvim-treesitter, on whichever of
 --- its two APIs is installed, so that :TSInstall ott works out of the box.
 ---
@@ -23,7 +29,7 @@ local function register_ts_parser()
       install_info = {
         url = PARSER_URL,
         files = { "src/parser.c", "src/scanner.c" },
-        branch = "main",
+        revision = PARSER_REVISION,
       },
       filetype = "ott",
     }
@@ -33,7 +39,7 @@ local function register_ts_parser()
   -- nvim-treesitter `main`
   local function add()
     require("nvim-treesitter.parsers").ott = {
-      install_info = { url = PARSER_URL, branch = "main" },
+      install_info = { url = PARSER_URL, revision = PARSER_REVISION },
     }
   end
   add()
