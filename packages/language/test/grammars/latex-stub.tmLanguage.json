@@ -1,0 +1,5 @@
+{
+  "name": "LaTeX stub for the Ott grammar tests",
+  "scopeName": "text.tex.latex",
+  "patterns": [{ "match": "\\\\[A-Za-z]+", "name": "support.function.stub.latex" }]
+}

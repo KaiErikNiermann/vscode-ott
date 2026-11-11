@@ -12,6 +12,15 @@
       "include": "#module-header"
     },
     {
+      "include": "#embed-section"
+    },
+    {
+      "include": "#hom-tex-document"
+    },
+    {
+      "include": "#hom-typst-document"
+    },
+    {
       "include": "#hom-tex-math"
     },
     {
@@ -49,7 +58,7 @@
     }
   ],
   "injections": {
-    "L:meta.embedded.inline.latex, L:meta.embedded.inline.typst": {
+    "L:meta.embedded.inline.latex, L:meta.embedded.inline.typst, L:meta.embedded.block.latex, L:meta.embedded.block.typst": {
       "patterns": [
         {
           "include": "#hom-inner-block"
@@ -139,6 +148,150 @@
         },
         {
           "include": "source.typst#math"
+        }
+      ]
+    },
+    "hom-tex-document": {
+      "name": "meta.homomorphism.ott",
+      "begin": "(\\{\\{)\\s*(tex-preamble|tex-wrap-pre|tex-wrap-post)(?![\\w-])",
+      "end": "(\\}\\})",
+      "beginCaptures": {
+        "1": {
+          "name": "punctuation.definition.homomorphism.begin.ott"
+        },
+        "2": {
+          "name": "entity.name.type.hom-name.ott"
+        }
+      },
+      "endCaptures": {
+        "1": {
+          "name": "punctuation.definition.homomorphism.end.ott"
+        }
+      },
+      "contentName": "meta.embedded.block.latex",
+      "patterns": [
+        {
+          "include": "#hom-inner-block"
+        },
+        {
+          "include": "#dot-form"
+        },
+        {
+          "include": "text.tex.latex"
+        }
+      ]
+    },
+    "hom-typst-document": {
+      "name": "meta.homomorphism.ott",
+      "begin": "(\\{\\{)\\s*(typst-preamble|typst-wrap-pre|typst-wrap-post)(?![\\w-])",
+      "end": "(\\}\\})",
+      "beginCaptures": {
+        "1": {
+          "name": "punctuation.definition.homomorphism.begin.ott"
+        },
+        "2": {
+          "name": "entity.name.type.hom-name.ott"
+        }
+      },
+      "endCaptures": {
+        "1": {
+          "name": "punctuation.definition.homomorphism.end.ott"
+        }
+      },
+      "contentName": "meta.embedded.block.typst",
+      "patterns": [
+        {
+          "include": "#hom-inner-block"
+        },
+        {
+          "include": "#dot-form"
+        },
+        {
+          "include": "source.typst"
+        }
+      ]
+    },
+    "embed-section": {
+      "comment": "An embed section: its {{ tex }} and {{ typst }} homs are documents, not maths. It runs to the next item keyword.",
+      "begin": "^\\s*(embed)\\b",
+      "end": "(?=^\\s*(?:grammar|defns|defn|funs|fun|embed|homs|subrules|contextrules|substitutions|freevars|parsing|begincoqsection|endcoqsection|coqvariable|metavar|indexvar)\\b)",
+      "beginCaptures": {
+        "1": {
+          "name": "keyword.control.block.ott"
+        }
+      },
+      "patterns": [
+        {
+          "include": "#comment"
+        },
+        {
+          "include": "#hom-tex-document"
+        },
+        {
+          "include": "#hom-typst-document"
+        },
+        {
+          "name": "meta.homomorphism.ott",
+          "begin": "(\\{\\{)\\s*(tex)(?![\\w-])",
+          "end": "(\\}\\})",
+          "beginCaptures": {
+            "1": {
+              "name": "punctuation.definition.homomorphism.begin.ott"
+            },
+            "2": {
+              "name": "entity.name.type.hom-name.ott"
+            }
+          },
+          "endCaptures": {
+            "1": {
+              "name": "punctuation.definition.homomorphism.end.ott"
+            }
+          },
+          "contentName": "meta.embedded.block.latex",
+          "patterns": [
+            {
+              "include": "#hom-inner-block"
+            },
+            {
+              "include": "#dot-form"
+            },
+            {
+              "include": "text.tex.latex"
+            }
+          ]
+        },
+        {
+          "name": "meta.homomorphism.ott",
+          "begin": "(\\{\\{)\\s*(typst)(?![\\w-])",
+          "end": "(\\}\\})",
+          "beginCaptures": {
+            "1": {
+              "name": "punctuation.definition.homomorphism.begin.ott"
+            },
+            "2": {
+              "name": "entity.name.type.hom-name.ott"
+            }
+          },
+          "endCaptures": {
+            "1": {
+              "name": "punctuation.definition.homomorphism.end.ott"
+            }
+          },
+          "contentName": "meta.embedded.block.typst",
+          "patterns": [
+            {
+              "include": "#hom-inner-block"
+            },
+            {
+              "include": "#dot-form"
+            },
+            {
+              "include": "source.typst"
+            }
+          ]
+        },
+        {
+          "include": "#homomorphism"
         }
       ]
     },

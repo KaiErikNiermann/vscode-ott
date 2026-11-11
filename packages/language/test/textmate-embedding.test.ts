@@ -132,3 +132,59 @@ describe('{{ typst }} homs embed Typst maths', () => {
         expect(hasScope(tokensOf(lines, 'com')[0], 'entity.name.type.hom-name.ott')).toBe(true);
     });
 });
+
+describe('embeds are documents', () => {
+    const both = { ...STUB_GRAMMARS.tex, ...STUB_GRAMMARS.typst };
+
+    test('typst-preamble is Typst markup, tex-preamble is LaTeX', async () => {
+        const typ = await tokenize('embed {{ typst-preamble #let a = *b* }}', both);
+        expect(hasScope(tokensOf(typ, '*b*')[0], 'markup.bold.stub.typst')).toBe(true);
+        expect(hasScope(tokensOf(typ, '*b*')[0], 'meta.embedded.block.typst')).toBe(true);
+        const tex = await tokenize('embed {{ tex-preamble \\newcommand{\\a}{b} }}', both);
+        expect(hasScope(tokensOf(tex, '\\newcommand')[0], 'support.function.stub.latex')).toBe(true);
+    });
+
+    const spec = [
+        'embed',
+        '{{ typst',
+        '= Syntax',
+        '*here* in bold',
+        '#let a = 1',
+        '}}',
+        '{{ tex \\section{Syntax} }}',
+        '',
+        'grammar',
+        't :: t_ ::=',
+        '  | x :: :: v {{ typst lambda }} {{ tex \\lambda }}',
+    ].join('\n');
+
+    test('in an embed section, {{ typst }} and {{ tex }} are documents', async () => {
+        const lines = await tokenize(spec, both);
+        expect(hasScope(tokensOf(lines, '*here*')[0], 'markup.bold.stub.typst')).toBe(true);
+        expect(hasScope(tokensOf(lines, '\\section')[0], 'meta.embedded.block.latex')).toBe(true);
+        expect(hasScope(tokensOf(lines, 'embed')[0], 'keyword.control.block.ott')).toBe(true);
+    });
+
+    test('the section ends at the next item, and homs there are maths again', async () => {
+        const lines = await tokenize(spec, both);
+        expect(hasScope(tokensOf(lines, 'grammar')[0], 'keyword.control.block.ott')).toBe(true);
+        expect(hasScope(tokensOf(lines, 'lambda')[0], 'meta.embedded.inline.typst')).toBe(true);
+        expect(hasScope(tokensOf(lines, '\\lambda')[0], 'meta.embedded.inline.latex')).toBe(true);
+    });
+
+    test('a [[...]] term in an embed stays an Ott reference', async () => {
+        const lines = await tokenize('embed {{ typst The term $[[ \\x.x ]]$. }}', both);
+        expect(hasScope(tokensOf(lines, '[[')[0], 'meta.hom-inner-block.ott')).toBe(true);
+    });
+
+    test.skipIf(TINYMIST_TYPST === undefined || VSCODE_TEX === undefined)('with the real grammars', async () => {
+        const latex = join(VSCODE_TEX!, '../LaTeX.tmLanguage.json');
+        const lines = await tokenize(spec, { 'source.typst': TINYMIST_TYPST!, 'text.tex': VSCODE_TEX!, 'text.tex.latex': latex });
+        // Tinymist leaves emphasis to semantic tokens; headings and code it scopes itself
+        expect(hasScope(tokensOf(lines, '=')[0], 'meta.embedded.block.typst')).toBe(true);
+        expect(tokensOf(lines, '=')[0]?.scopes.some(s => s.startsWith('markup.heading'))).toBe(true);
+        expect(tokensOf(lines, 'let')[0]?.scopes.some(s => s.startsWith('keyword') || s.startsWith('storage'))).toBe(true);
+        expect(hasScope(tokensOf(lines, 'grammar')[0], 'keyword.control.block.ott')).toBe(true);
+        expect(hasScope(tokensOf(lines, 'lambda')[0], 'meta.embedded.inline.typst')).toBe(true);
+    });
+});
