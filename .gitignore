@@ -14,3 +14,6 @@ packages/extension/LICENSE
 *.vsix
 packages/extension/icons/
 .vscode-test/
+
+# Local scratch output (probes, built parsers)
+.scratch/
