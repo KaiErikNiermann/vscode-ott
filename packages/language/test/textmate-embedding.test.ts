@@ -1,4 +1,5 @@
 import { describe, expect, test } from 'vitest';
+import { homedir } from 'node:os';
 import { join } from 'node:path';
 import { hasScope, installedGrammar, STUB_GRAMMARS, tokenize, tokensOf, versionedDirs } from './textmate-tokenizer.js';
 
@@ -76,6 +77,58 @@ describe('{{ tex }} homs embed TeX maths', () => {
         expect(tokensOf(lines, 'lambda')[0]?.scopes.some(s => s.endsWith('.math.tex'))).toBe(true);
         expect(hasScope(tokensOf(lines, 't')[0], 'variable.other.inner-ref.ott')).toBe(true);
         expect(hasScope(tokensOf(lines, 'x')[0], 'variable.other.inner-ref.ott')).toBe(true);
+        expect(hasScope(tokensOf(lines, 'com')[0], 'entity.name.type.hom-name.ott')).toBe(true);
+    });
+});
+
+const TINYMIST_TYPST = installedGrammar(
+    versionedDirs(join(homedir(), '.vscode/extensions'), 'myriad-dreamin.tinymist-')
+        .map(d => join(d, 'out/typst.tmLanguage.json')),
+);
+
+describe('{{ typst }} homs embed Typst maths', () => {
+    const line = '  | \\ x . t :: :: lam {{ typst lambda [[x]] . sans([[t]]) }} {{ com abstraction }}';
+
+    test('the body is Typst maths', async () => {
+        const lines = await tokenize(line, STUB_GRAMMARS.typst);
+        const lambda = tokensOf(lines, 'lambda')[0];
+        expect(hasScope(lambda, 'meta.embedded.inline.typst')).toBe(true);
+        expect(hasScope(lambda, 'variable.math.stub.typst')).toBe(true);
+        expect(hasScope(tokensOf(lines, 'typst')[0], 'entity.name.type.hom-name.ott')).toBe(true);
+    });
+
+    test('a [[...]] hole stays an Ott reference, inside a Typst call too', async () => {
+        const lines = await tokenize(line, STUB_GRAMMARS.typst);
+        for (const name of ['x', 't']) {
+            expect(hasScope(tokensOf(lines, name)[0], 'variable.other.inner-ref.ott'), name).toBe(true);
+        }
+    });
+
+    test('}} ends the hom, and what follows is Ott again', async () => {
+        const lines = await tokenize(line, STUB_GRAMMARS.typst);
+        expect(hasScope(tokensOf(lines, 'com')[0], 'entity.name.type.hom-name.ott')).toBe(true);
+        expect(hasScope(tokensOf(lines, 'com')[0], 'meta.embedded.inline.typst')).toBe(false);
+    });
+
+    test('typstvar is maths too, and typst-preamble is not', async () => {
+        const v = await tokenize('metavar x ::= {{ typstvar sans([[x]]) }}', STUB_GRAMMARS.typst);
+        expect(hasScope(tokensOf(v, 'sans')[0], 'variable.math.stub.typst')).toBe(true);
+        const p = await tokenize('embed {{ typst-preamble #let a = 1 }}', STUB_GRAMMARS.typst);
+        expect(p.flat().some(t => hasScope(t, 'meta.embedded.inline.typst'))).toBe(false);
+    });
+
+    test('without a Typst grammar the hom still parses as Ott', async () => {
+        const lines = await tokenize(line);
+        expect(hasScope(tokensOf(lines, 'x')[0], 'variable.other.inner-ref.ott')).toBe(true);
+        expect(hasScope(tokensOf(lines, 'com')[0], 'entity.name.type.hom-name.ott')).toBe(true);
+    });
+
+    test.skipIf(TINYMIST_TYPST === undefined)('with Tinymist\'s Typst grammar', async () => {
+        const lines = await tokenize(line, { 'source.typst': TINYMIST_TYPST! });
+        expect(tokensOf(lines, 'lambda')[0]?.scopes.some(s => s.endsWith('.typst') && !s.startsWith('meta.embedded'))).toBe(true);
+        for (const name of ['x', 't']) {
+            expect(hasScope(tokensOf(lines, name)[0], 'variable.other.inner-ref.ott'), name).toBe(true);
+        }
         expect(hasScope(tokensOf(lines, 'com')[0], 'entity.name.type.hom-name.ott')).toBe(true);
     });
 });

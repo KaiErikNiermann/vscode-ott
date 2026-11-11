@@ -75,6 +75,7 @@ export function hasScope(token: Token | undefined, prefix: string): boolean {
 /** The stub grammars under test/grammars, by the scope name they stand in for. */
 export const STUB_GRAMMARS = {
     tex: { 'text.tex': new URL('grammars/tex-stub.tmLanguage.json', import.meta.url).pathname },
+    typst: { 'source.typst': new URL('grammars/typst-stub.tmLanguage.json', import.meta.url).pathname },
 } as const;
 
 /**

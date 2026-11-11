@@ -1,0 +1,21 @@
+{
+  "name": "Typst stub for the Ott grammar tests",
+  "scopeName": "source.typst",
+  "patterns": [{ "include": "#markup" }],
+  "repository": {
+    "markup": {
+      "patterns": [{ "match": "\\*[^*]*\\*", "name": "markup.bold.stub.typst" }]
+    },
+    "math": {
+      "patterns": [
+        { "match": "[A-Za-z][A-Za-z.]*", "name": "variable.math.stub.typst" },
+        {
+          "begin": "\\(",
+          "end": "\\)",
+          "name": "meta.paren.stub.typst",
+          "patterns": [{ "include": "#math" }]
+        }
+      ]
+    }
+  }
+}
