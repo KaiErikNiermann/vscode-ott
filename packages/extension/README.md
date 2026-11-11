@@ -6,7 +6,7 @@ Ott is a tool for writing definitions of programming languages and calculi. It g
 
 ## Features
 
-- **Syntax highlighting** for `.ott` files
+- **Syntax highlighting** for `.ott` files, including hom bodies in their own language: `{{ tex }}` homs as TeX maths, `{{ typst }}` homs as Typst maths, and `embed` sections and preambles as LaTeX and Typst documents. LaTeX uses the grammar built into VS Code; Typst needs a Typst extension such as [Tinymist](https://marketplace.visualstudio.com/items?itemName=myriad-dreamin.tinymist), and without one those bodies are left plain
 - **Error reporting** with inline diagnostics as you type
 - **Document symbols** -- navigate metavars, grammar rules, definition classes, and embeds in the outline view (`Ctrl+Shift+O`)
 - **Hover documentation** -- hover over hom names, metavars, nonterminals, comprehensions, and bind specs for contextual docs

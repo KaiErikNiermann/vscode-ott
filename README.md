@@ -12,7 +12,7 @@ Ott is a tool for writing definitions of programming languages and calculi, deve
 
 ## Features
 
-- **Syntax highlighting** -- TextMate grammar for VS Code, tree-sitter for Neovim
+- **Syntax highlighting** -- TextMate grammar for VS Code, tree-sitter for Neovim. Hom bodies are highlighted in their own language: `{{ tex }}` as TeX maths and `{{ typst }}` as Typst maths, with `[[...]]` holes still read as Ott, and `embed` sections and preambles as LaTeX and Typst documents
 - **Error reporting** -- Langium-based parser with inline diagnostics
 - **Document symbols** -- outline view for metavars, grammar rules, definition classes, embeds
 - **Hover documentation** -- contextual docs for hom names, metavars, nonterminals, comprehensions, bind specs
