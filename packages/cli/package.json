@@ -23,7 +23,7 @@
         "ott-language": "workspace:*",
         "langium": "~4.4.2",
         "chalk": "~6.0.1",
-        "commander": "~15.0.0"
+        "commander": "~15.1.0"
     },
     "devDependencies": {
         "@types/node": "~26.6.6"
